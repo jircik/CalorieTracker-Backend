@@ -1,0 +1,12 @@
+target
+out
+.idea
+*.iml
+.git
+.gitignore
+.gitattributes
+.env
+*.env
+HELP.md
+README.md
+requests.http
