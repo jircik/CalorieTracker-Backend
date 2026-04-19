@@ -7,6 +7,15 @@ This project was designed as a **progressively evolving system (V1 → V2 (curre
 
 ---
 
+# Live API Documentation
+
+Interactive Swagger/OpenAPI documentation is available online:
+
+* **Swagger UI:** [https://calorietracker-api.jircik.dev/swagger-ui/index.html](https://calorietracker-api.jircik.dev/swagger-ui/index.html)
+* **OpenAPI spec (JSON):** [https://calorietracker-api.jircik.dev/v3/api-docs](https://calorietracker-api.jircik.dev/v3/api-docs)
+
+---
+
 # Features
 
 ### User Management
@@ -328,4 +337,4 @@ The project has an automated test suite focused on high reliability and coverage
 
 Arthur Jircik Cronemberger
 
-Software Engineering student and backend developer focused on building scalable and well-structured backend systems.
+Software Engineering student and backend developer focused on building scalable and well-structured systems.
