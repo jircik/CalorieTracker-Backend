@@ -214,7 +214,7 @@ class UserServiceTest {
         @DisplayName("deve atualizar apenas campos não nulos")
         void shouldUpdateOnlyNonNullFields() {
             ConfigureUserProfileRequest request = new ConfigureUserProfileRequest(
-                    25, 1.75, 75.0, null, null, GenderEnum.MALE, null);
+                    25, 1.75, 75.0, null, null, null, GenderEnum.MALE, null);
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
@@ -232,7 +232,7 @@ class UserServiceTest {
         @DisplayName("deve lançar exceção quando usuário não existe")
         void shouldThrowWhenUserNotFound() {
             ConfigureUserProfileRequest request = new ConfigureUserProfileRequest(
-                    25, null, null, null, null, null, null);
+                    25, null, null, null, null, null, null, null);
 
             when(userRepository.findById(99L)).thenReturn(Optional.empty());
 

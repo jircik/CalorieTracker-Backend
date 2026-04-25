@@ -21,6 +21,9 @@ public record ConfigureUserProfileRequest(
         @Schema(description = "Daily calorie intake goal in kcal", example = "2200.0")
         Double dailyCalorieIntakeGoal,
 
+        @Schema(description = "Daily water intake goal in milliliters", example = "2500")
+        Integer dailyWaterGoalMl,
+
         @Schema(description = "User's gender")
         GenderEnum gender,
 

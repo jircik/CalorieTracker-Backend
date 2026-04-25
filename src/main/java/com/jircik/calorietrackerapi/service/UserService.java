@@ -52,6 +52,7 @@ public class UserService {
                 null,
                 null,
                 null,
+                null,
                 null
         );
     }
@@ -65,6 +66,7 @@ public class UserService {
         if (request.currentWeight() != null) user.setCurrentWeight(request.currentWeight());
         if (request.weightGoal() != null) user.setWeightGoal(request.weightGoal());
         if (request.dailyCalorieIntakeGoal() != null) user.setDailyCalorieIntakeGoal(request.dailyCalorieIntakeGoal());
+        if (request.dailyWaterGoalMl() != null) user.setDailyWaterGoalMl(request.dailyWaterGoalMl());
         if (request.gender() != null) user.setGender(request.gender());
         if (request.activityLevel() != null) user.setActivityLevel(request.activityLevel());
 
@@ -79,6 +81,7 @@ public class UserService {
                 user.getCurrentWeight(),
                 user.getWeightGoal(),
                 user.getDailyCalorieIntakeGoal(),
+                user.getDailyWaterGoalMl(),
                 user.getGender(),
                 user.getActivityLevel()
         );
@@ -98,6 +101,7 @@ public class UserService {
                 user.getCurrentWeight(),
                 user.getWeightGoal(),
                 user.getDailyCalorieIntakeGoal(),
+                user.getDailyWaterGoalMl(),
                 user.getGender(),
                 user.getActivityLevel()
         );
@@ -116,6 +120,7 @@ public class UserService {
                         user.getCurrentWeight(),
                         user.getWeightGoal(),
                         user.getDailyCalorieIntakeGoal(),
+                        user.getDailyWaterGoalMl(),
                         user.getGender(),
                         user.getActivityLevel()
                 ))

@@ -55,16 +55,18 @@ Content-Type: application/json
 }
 
 ### Configure User Profile or Update User Profile
+### All fields are optional — only non-null fields are applied (partial update)
 
 PATCH http://localhost:8080/users/{userId}/profile
 Content-Type: application/json
 
 {
   "age": "(Integer)",
-  "heightInMeters": "(Double)",
-  "currentWeight": "(Double)",
-  "weightGoal": "(Double)",
-  "dailyCalorieIntakeGoal": "(Double)",
+  "heightInMeters": "(Double) height in meters, e.g. 1.75",
+  "currentWeight": "(Double) kg",
+  "weightGoal": "(Double) kg",
+  "dailyCalorieIntakeGoal": "(Double) kcal",
+  "dailyWaterGoalMl": "(Integer) ml, e.g. 2500",
   "gender": "(ENUM) MALE, FEMALE, RATHER_NOT_SAY",
   "activityLevel": "(ENUM) SEDENTARY, LIGHT, MODERATE, INTENSE"
 }
@@ -88,3 +90,20 @@ GET http://localhost:8080/users/{userId}/summary?startDate=YYYY-MM-DD&endDate=YY
 GET http://localhost:8080/users/{userId}/meals?date=YYYY-MM-DD
 
 
+### WATER ENDPOINTS
+
+### Log water intake
+### Returns the created log entry with its id, amountMl, and loggedAt timestamp
+POST http://localhost:8080/users/{userId}/water
+Content-Type: application/json
+
+{
+  "amountMl": "(Integer) ml consumed, e.g. 500"
+}
+
+### Get daily water intake
+### Returns dailyGoalMl (null if not set), totalConsumedMl, and list of all entries for the day
+GET http://localhost:8080/users/{userId}/water?date=YYYY-MM-DD
+
+### Delete a water log entry
+DELETE http://localhost:8080/users/{userId}/water/{logId}

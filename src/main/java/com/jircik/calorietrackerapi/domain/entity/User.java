@@ -43,6 +43,8 @@ public class User {
 
     private Double dailyCalorieIntakeGoal;
 
+    private Integer dailyWaterGoalMl;
+
     @Enumerated(EnumType.STRING)
     private GenderEnum gender;
 

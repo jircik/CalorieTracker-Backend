@@ -46,7 +46,7 @@ class UserControllerTest {
     @DisplayName("POST /users — deve criar usuário e retornar 200")
     void createUser_shouldReturn200() throws Exception {
         CreateUserRequest request = new CreateUserRequest("João", "joao@email.com");
-        UserResponse response = new UserResponse(1L, "João", "joao@email.com", null, null, null, null, null, null, null);
+        UserResponse response = new UserResponse(1L, "João", "joao@email.com", null, null, null, null, null, null, null, null);
 
         when(userService.createUser(any(CreateUserRequest.class))).thenReturn(response);
 
@@ -62,7 +62,7 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /users/{id} — deve retornar usuário quando encontrado")
     void getUser_shouldReturn200WhenFound() throws Exception {
-        UserResponse response = new UserResponse(1L, "João", "joao@email.com", null, null, null, null, null, null, null);
+        UserResponse response = new UserResponse(1L, "João", "joao@email.com", null, null, null, null, null, null, null, null);
         when(userService.getUser(1L)).thenReturn(response);
 
         mockMvc.perform(get("/users/1"))
@@ -87,8 +87,8 @@ class UserControllerTest {
     @DisplayName("GET /users — deve retornar lista de usuários")
     void getAllUsers_shouldReturnList() throws Exception {
         List<UserResponse> responses = List.of(
-                new UserResponse(1L, "João", "joao@email.com", null, null, null, null, null, null, null),
-                new UserResponse(2L, "Maria", "maria@email.com", null, null, null, null, null, null, null)
+                new UserResponse(1L, "João", "joao@email.com", null, null, null, null, null, null, null, null),
+                new UserResponse(2L, "Maria", "maria@email.com", null, null, null, null, null, null, null, null)
         );
         when(userService.getAllUsers()).thenReturn(responses);
 
@@ -130,9 +130,9 @@ class UserControllerTest {
     @DisplayName("PATCH /users/{id}/profile — deve atualizar perfil e retornar 200")
     void configureUserProfile_shouldReturn200() throws Exception {
         ConfigureUserProfileRequest request = new ConfigureUserProfileRequest(
-                25, 1.75, 75.0, 70.0, 2200.0, null, null);
+                25, 1.75, 75.0, 70.0, 2200.0, null, null, null);
         UserResponse response = new UserResponse(1L, "João", "joao@email.com",
-                25, 1.75, 75.0, 70.0, 2200.0, null, null);
+                25, 1.75, 75.0, 70.0, 2200.0, null, null, null);
 
         when(userService.configureUserProfile(any(ConfigureUserProfileRequest.class), eq(1L)))
                 .thenReturn(response);
@@ -149,7 +149,7 @@ class UserControllerTest {
     @DisplayName("PATCH /users/{id}/profile — deve retornar 404 quando usuário não existe")
     void configureUserProfile_shouldReturn404WhenNotFound() throws Exception {
         ConfigureUserProfileRequest request = new ConfigureUserProfileRequest(
-                25, null, null, null, null, null, null);
+                25, null, null, null, null, null, null, null);
 
         when(userService.configureUserProfile(any(ConfigureUserProfileRequest.class), eq(99L)))
                 .thenThrow(new ResourceNotFoundException("User not found"));

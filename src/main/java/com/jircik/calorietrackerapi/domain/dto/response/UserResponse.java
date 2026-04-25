@@ -30,6 +30,9 @@ public record UserResponse(
         @Schema(description = "Daily calorie intake goal in kcal; null if profile not configured")
         Double dailyCalorieIntakeGoal,
 
+        @Schema(description = "Daily water intake goal in milliliters; null if not configured")
+        Integer dailyWaterGoalMl,
+
         @Schema(description = "User's gender; null if profile not configured")
         GenderEnum gender,
 
