@@ -1,7 +1,6 @@
 package com.jircik.calorietrackerapi.service;
 
 import com.jircik.calorietrackerapi.domain.dto.request.ConfigureUserProfileRequest;
-import com.jircik.calorietrackerapi.domain.dto.request.CreateUserRequest;
 import com.jircik.calorietrackerapi.domain.dto.request.GetSummaryRequest;
 import com.jircik.calorietrackerapi.domain.dto.response.*;
 import com.jircik.calorietrackerapi.domain.entity.Meal;
@@ -32,30 +31,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final MealRepository mealRepository;
     private final MealFoodRepository mealFoodRepository;
-
-    public UserResponse createUser(CreateUserRequest request) {
-        User user = User.builder()
-                .name(request.name())
-                .email(request.email())
-                .build();
-
-        User saved =  userRepository.save(user);
-
-        return new UserResponse(
-                saved.getId(),
-                saved.getName(),
-                saved.getEmail(),
-                //fields are null because createUser method is separated from configureUserProfile
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-    }
 
     public UserResponse configureUserProfile(ConfigureUserProfileRequest request, Long id) {
         User user = userRepository.findById(id)

@@ -3,7 +3,6 @@ package com.jircik.calorietrackerapi.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.jircik.calorietrackerapi.domain.dto.request.ConfigureUserProfileRequest;
-import com.jircik.calorietrackerapi.domain.dto.request.CreateUserRequest;
 import com.jircik.calorietrackerapi.domain.dto.request.GetSummaryRequest;
 import com.jircik.calorietrackerapi.domain.dto.response.SummaryResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealsByDateResponse;
@@ -27,7 +26,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
@@ -41,23 +39,6 @@ class UserControllerTest {
 
     @MockitoBean
     private UserService userService;
-
-    @Test
-    @DisplayName("POST /users — deve criar usuário e retornar 200")
-    void createUser_shouldReturn200() throws Exception {
-        CreateUserRequest request = new CreateUserRequest("João", "joao@email.com");
-        UserResponse response = new UserResponse(1L, "João", "joao@email.com", null, null, null, null, null, null, null, null);
-
-        when(userService.createUser(any(CreateUserRequest.class))).thenReturn(response);
-
-        mockMvc.perform(post("/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("João"))
-                .andExpect(jsonPath("$.email").value("joao@email.com"));
-    }
 
     @Test
     @DisplayName("GET /users/{id} — deve retornar usuário quando encontrado")

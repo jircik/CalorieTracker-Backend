@@ -1,3 +1,28 @@
+### AUTH ENDPOINTS
+
+### Register a new user
+### Returns: token (JWT), userId, name, email
+### Use the token in Authorization header for all other requests: Bearer <token>
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "name": "Your Name",
+  "email": "email@example.com",
+  "password": "(String) min 8 characters"
+}
+
+### Login
+### Returns: token (JWT), userId, name, email
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "email@example.com",
+  "password": "yourpassword"
+}
+
+
 ### MEAL ENDPOINTS
 
 ### Create meal

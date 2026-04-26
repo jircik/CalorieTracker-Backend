@@ -1,7 +1,6 @@
 package com.jircik.calorietrackerapi.controller;
 
 import com.jircik.calorietrackerapi.domain.dto.request.ConfigureUserProfileRequest;
-import com.jircik.calorietrackerapi.domain.dto.request.CreateUserRequest;
 import com.jircik.calorietrackerapi.domain.dto.request.GetSummaryRequest;
 import com.jircik.calorietrackerapi.domain.dto.response.DailySummaryResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealsByDateResponse;
@@ -27,11 +26,14 @@ public class UserController {
 
     private final UserService userService;
 
+    /*
+
     @Operation(summary = "Create a user", description = "Creates a new user with name and email")
     @PostMapping
     public UserResponse createUser(@RequestBody CreateUserRequest request) {
         return userService.createUser(request);
     }
+    */
 
     @Operation(summary = "Update user profile", description = "Partial update — only non-null fields are applied (age, height, weight, goal, gender, activity level)")
     @PatchMapping("/{id}/profile")

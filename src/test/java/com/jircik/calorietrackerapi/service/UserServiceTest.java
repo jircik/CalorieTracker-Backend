@@ -1,7 +1,6 @@
 package com.jircik.calorietrackerapi.service;
 
 import com.jircik.calorietrackerapi.domain.dto.request.ConfigureUserProfileRequest;
-import com.jircik.calorietrackerapi.domain.dto.request.CreateUserRequest;
 import com.jircik.calorietrackerapi.domain.dto.request.GetSummaryRequest;
 import com.jircik.calorietrackerapi.domain.dto.response.SummaryResponse;
 import com.jircik.calorietrackerapi.domain.entity.GenderEnum;
@@ -59,26 +58,6 @@ class UserServiceTest {
                 .name("João")
                 .email("joao@email.com")
                 .build();
-    }
-
-    // createUser
-    @Nested
-    @DisplayName("createUser")
-    class CreateUser {
-
-        @Test
-        @DisplayName("deve criar um usuário e retornar UserResponse")
-        void shouldCreateUserSuccessfully() {
-            CreateUserRequest request = new CreateUserRequest("João", "joao@email.com");
-            when(userRepository.save(any(User.class))).thenReturn(testUser);
-
-            UserResponse response = userService.createUser(request);
-
-            assertThat(response.id()).isEqualTo(1L);
-            assertThat(response.name()).isEqualTo("João");
-            assertThat(response.email()).isEqualTo("joao@email.com");
-            verify(userRepository).save(any(User.class));
-        }
     }
 
     // getUser

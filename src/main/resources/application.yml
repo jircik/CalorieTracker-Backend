@@ -20,3 +20,8 @@ spring:
 fatsecret:
   client-id: ${FATSECRET_CLIENT_ID}
   client-secret: ${FATSECRET_CLIENT_SECRET}
+
+application:
+  security:
+    jwt-secret: ${JWT_SECRET}
+    jwt-expiration-ms: 86400000
