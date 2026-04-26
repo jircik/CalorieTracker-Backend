@@ -76,7 +76,7 @@ class MealServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(mealRepository.save(any(Meal.class))).thenReturn(testMeal);
 
-            MealResponse response = mealService.createMeal(1L, dateTime, MealTypeEnum.BREAKFAST);
+            MealResponse response = mealService.createMeal(1L, dateTime, MealTypeEnum.BREAKFAST, 1L);
 
             assertThat(response.id()).isEqualTo(10L);
             assertThat(response.userId()).isEqualTo(1L);
@@ -89,9 +89,22 @@ class MealServiceTest {
         void shouldThrowWhenUserNotFound() {
             when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> mealService.createMeal(99L, LocalDateTime.now(), MealTypeEnum.BREAKFAST))
+            assertThatThrownBy(() -> mealService.createMeal(99L, LocalDateTime.now(), MealTypeEnum.BREAKFAST, 99L))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessage("User not found");
+        }
+
+        @Test
+        @DisplayName("deve lançar 403 quando userId não corresponde ao caller")
+        void shouldThrowForbiddenWhenUserIdNotMatchesCaller() {
+            assertThatThrownBy(() -> mealService.createMeal(
+                            1L, LocalDateTime.now(), MealTypeEnum.BREAKFAST, 2L))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                    .satisfies(e -> {
+                        org.springframework.web.server.ResponseStatusException rse =
+                                (org.springframework.web.server.ResponseStatusException) e;
+                        assertThat(rse.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.FORBIDDEN);
+                    });
         }
     }
 
@@ -120,7 +133,7 @@ class MealServiceTest {
             when(nutritionProvider.getNutrition("Arroz", 150.0)).thenReturn(nutrition);
             when(mealFoodRepository.save(any(MealFood.class))).thenReturn(savedFood);
 
-            MealFoodResponse response = mealService.addFoodToMeal(10L, request);
+            MealFoodResponse response = mealService.addFoodToMeal(10L, request, 1L);
 
             assertThat(response.foodName()).isEqualTo("Arroz");
             assertThat(response.calories()).isEqualTo(195.0);
@@ -149,7 +162,7 @@ class MealServiceTest {
                     .thenReturn(nutrition);
             when(mealFoodRepository.save(any(MealFood.class))).thenReturn(savedFood);
 
-            MealFoodResponse response = mealService.addFoodToMeal(10L, request);
+            MealFoodResponse response = mealService.addFoodToMeal(10L, request, 1L);
 
             assertThat(response.calories()).isEqualTo(195.0);
             verify(nutritionProvider).calculateNutritionByFoodId("123", 150.0);
@@ -176,7 +189,7 @@ class MealServiceTest {
             when(nutritionProvider.getNutrition("Arroz", 150.0)).thenReturn(nutrition);
             when(mealFoodRepository.save(any(MealFood.class))).thenReturn(savedFood);
 
-            MealFoodResponse response = mealService.addFoodToMeal(10L, request);
+            MealFoodResponse response = mealService.addFoodToMeal(10L, request, 1L);
 
             verify(nutritionProvider).getNutrition("Arroz", 150.0);
         }
@@ -186,7 +199,7 @@ class MealServiceTest {
         void shouldThrowWhenMealNotFound() {
             when(mealRepository.findById(99L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> mealService.addFoodToMeal(99L, request))
+            assertThatThrownBy(() -> mealService.addFoodToMeal(99L, request, 1L))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessage("Meal not found");
         }
@@ -200,9 +213,9 @@ class MealServiceTest {
         @Test
         @DisplayName("deve deletar refeição quando ela existe")
         void shouldDeleteMealWhenExists() {
-            when(mealRepository.existsById(10L)).thenReturn(true);
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
 
-            mealService.DeleteMeal(10L);
+            mealService.DeleteMeal(10L, 1L);
 
             verify(mealRepository).deleteById(10L);
         }
@@ -210,9 +223,9 @@ class MealServiceTest {
         @Test
         @DisplayName("deve lançar exceção quando refeição não existe")
         void shouldThrowWhenMealNotFound() {
-            when(mealRepository.existsById(99L)).thenReturn(false);
+            when(mealRepository.findById(99L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> mealService.DeleteMeal(99L))
+            assertThatThrownBy(() -> mealService.DeleteMeal(99L, 1L))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessage("Meal not found!");
         }
@@ -227,9 +240,10 @@ class MealServiceTest {
         @DisplayName("deve deletar alimento quando encontrado")
         void shouldDeleteMealFoodWhenFound() {
             MealFood mealFood = MealFood.builder().id(1L).meal(testMeal).build();
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
             when(mealFoodRepository.findByIdAndMeal_Id(1L, 10L)).thenReturn(Optional.of(mealFood));
 
-            mealService.DeleteMealFood(10L, 1L);
+            mealService.DeleteMealFood(10L, 1L, 1L);
 
             verify(mealFoodRepository).delete(mealFood);
         }
@@ -237,9 +251,10 @@ class MealServiceTest {
         @Test
         @DisplayName("deve lançar exceção quando alimento não existe")
         void shouldThrowWhenMealFoodNotFound() {
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
             when(mealFoodRepository.findByIdAndMeal_Id(99L, 10L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> mealService.DeleteMealFood(10L, 99L))
+            assertThatThrownBy(() -> mealService.DeleteMealFood(10L, 99L, 1L))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessage("MealFood not found!");
         }
@@ -260,10 +275,11 @@ class MealServiceTest {
 
             NutritionResult nutrition = new NutritionResult("123", "Arroz", 260.0, 57.3, 5.3, 0.5);
 
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
             when(mealFoodRepository.findByIdAndMeal_Id(1L, 10L)).thenReturn(Optional.of(existing));
             when(nutritionProvider.calculateNutritionByFoodId("123", 200.0)).thenReturn(nutrition);
 
-            MealFoodResponse response = mealService.updateMealFoodQuantity(10L, 1L, 200.0);
+            MealFoodResponse response = mealService.updateMealFoodQuantity(10L, 1L, 200.0, 1L);
 
             assertThat(response.quantity()).isEqualTo(200.0);
             assertThat(response.calories()).isEqualTo(260.0);
@@ -274,9 +290,10 @@ class MealServiceTest {
         @Test
         @DisplayName("deve lançar exceção quando alimento não existe")
         void shouldThrowWhenMealFoodNotFound() {
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
             when(mealFoodRepository.findByIdAndMeal_Id(99L, 10L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> mealService.updateMealFoodQuantity(10L, 99L, 200.0))
+            assertThatThrownBy(() -> mealService.updateMealFoodQuantity(10L, 99L, 200.0, 1L))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessage("MealFood not found!");
         }
@@ -284,14 +301,16 @@ class MealServiceTest {
         @Test
         @DisplayName("deve lançar exceção quando quantidade é zero")
         void shouldThrowWhenQuantityIsZero() {
-            assertThatThrownBy(() -> mealService.updateMealFoodQuantity(10L, 1L, 0.0))
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
+            assertThatThrownBy(() -> mealService.updateMealFoodQuantity(10L, 1L, 0.0, 1L))
                     .isInstanceOf(RuntimeException.class);
         }
 
         @Test
         @DisplayName("deve lançar exceção quando quantidade é negativa")
         void shouldThrowWhenQuantityIsNegative() {
-            assertThatThrownBy(() -> mealService.updateMealFoodQuantity(10L, 1L, -10.0))
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
+            assertThatThrownBy(() -> mealService.updateMealFoodQuantity(10L, 1L, -10.0, 1L))
                     .isInstanceOf(RuntimeException.class);
         }
     }
@@ -312,7 +331,7 @@ class MealServiceTest {
             when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
             when(mealFoodRepository.findByMeal_Id(10L)).thenReturn(List.of(food1, food2));
 
-            MealSummaryResponse response = mealService.getMealSummary(10L);
+            MealSummaryResponse response = mealService.getMealSummary(10L, 1L);
 
             assertThat(response.mealId()).isEqualTo(10L);
             assertThat(response.totalCalories()).isEqualTo(550.0);
@@ -328,7 +347,7 @@ class MealServiceTest {
             when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
             when(mealFoodRepository.findByMeal_Id(10L)).thenReturn(Collections.emptyList());
 
-            MealSummaryResponse response = mealService.getMealSummary(10L);
+            MealSummaryResponse response = mealService.getMealSummary(10L, 1L);
 
             assertThat(response.totalCalories()).isEqualTo(0.0);
             assertThat(response.foodCount()).isEqualTo(0.0);
@@ -339,9 +358,23 @@ class MealServiceTest {
         void shouldThrowWhenMealNotFound() {
             when(mealRepository.findById(99L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> mealService.getMealSummary(99L))
+            assertThatThrownBy(() -> mealService.getMealSummary(99L, 1L))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessage("Meal not found!");
+        }
+
+        @Test
+        @DisplayName("deve lançar 403 quando caller não é o dono da refeição")
+        void shouldThrowForbiddenWhenNotOwner() {
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
+            // testMeal belongs to userId=1L; pass callerUserId=2L
+            assertThatThrownBy(() -> mealService.getMealSummary(10L, 2L))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                    .satisfies(e -> {
+                        org.springframework.web.server.ResponseStatusException rse =
+                                (org.springframework.web.server.ResponseStatusException) e;
+                        assertThat(rse.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.FORBIDDEN);
+                    });
         }
     }
 }

@@ -10,6 +10,8 @@ import com.jircik.calorietrackerapi.domain.dto.response.MealResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealSummaryResponse;
 import com.jircik.calorietrackerapi.domain.entity.MealTypeEnum;
 import com.jircik.calorietrackerapi.exception.ResourceNotFoundException;
+import com.jircik.calorietrackerapi.security.JwtService;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import com.jircik.calorietrackerapi.service.MealService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,11 +23,15 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
+import static com.jircik.calorietrackerapi.util.SecurityTestUtils.*;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -45,6 +51,12 @@ public class MealControllerTest {
     @MockitoBean
     private MealService mealService;
 
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private UserDetailsService userDetailsService;
+
     // ── createMeal ────────────────────────────────────────────────────────────
 
     @Test
@@ -54,10 +66,11 @@ public class MealControllerTest {
         CreateMealRequest request = new CreateMealRequest(1L, dateTime, MealTypeEnum.BREAKFAST);
         MealResponse response = new MealResponse(10L, 1L, dateTime, MealTypeEnum.BREAKFAST, LocalDateTime.now());
 
-        when(mealService.createMeal(eq(1L), eq(dateTime), eq(MealTypeEnum.BREAKFAST)))
+        when(mealService.createMeal(eq(1L), eq(dateTime), eq(MealTypeEnum.BREAKFAST), eq(1L)))
                 .thenReturn(response);
 
         mockMvc.perform(post("/meals")
+                        .with(authentication(authAs(1L))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -72,6 +85,7 @@ public class MealControllerTest {
         CreateMealRequest request = new CreateMealRequest(null, LocalDateTime.now(), MealTypeEnum.LUNCH);
 
         mockMvc.perform(post("/meals")
+                        .with(authentication(authAs(1L))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -83,6 +97,7 @@ public class MealControllerTest {
         CreateMealRequest request = new CreateMealRequest(1L, null, MealTypeEnum.LUNCH);
 
         mockMvc.perform(post("/meals")
+                        .with(authentication(authAs(1L))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -94,6 +109,7 @@ public class MealControllerTest {
         CreateMealRequest request = new CreateMealRequest(1L, LocalDateTime.now(), null);
 
         mockMvc.perform(post("/meals")
+                        .with(authentication(authAs(1L))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -108,10 +124,11 @@ public class MealControllerTest {
         MealFoodResponse response = new MealFoodResponse(
                 1L, "Arroz", 150.0, "g", 195.0, 43.0, 4.0, 0.4);
 
-        when(mealService.addFoodToMeal(eq(10L), any(AddFoodToMealRequest.class)))
+        when(mealService.addFoodToMeal(eq(10L), any(AddFoodToMealRequest.class), eq(1L)))
                 .thenReturn(response);
 
         mockMvc.perform(post("/meals/10/foods")
+                        .with(authentication(authAs(1L))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -125,6 +142,7 @@ public class MealControllerTest {
         AddFoodToMealRequest request = new AddFoodToMealRequest("", 150.0, "g");
 
         mockMvc.perform(post("/meals/10/foods")
+                        .with(authentication(authAs(1L))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -136,6 +154,7 @@ public class MealControllerTest {
         AddFoodToMealRequest request = new AddFoodToMealRequest("Arroz", -1.0, "g");
 
         mockMvc.perform(post("/meals/10/foods")
+                        .with(authentication(authAs(1L))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -149,9 +168,10 @@ public class MealControllerTest {
         MealSummaryResponse response = new MealSummaryResponse(
                 10L, 550.0, 35.0, 70.0, 17.0, 2.0);
 
-        when(mealService.getMealSummary(10L)).thenReturn(response);
+        when(mealService.getMealSummary(eq(10L), eq(1L))).thenReturn(response);
 
-        mockMvc.perform(get("/meals/10/summary"))
+        mockMvc.perform(get("/meals/10/summary")
+                        .with(authentication(authAs(1L))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mealId").value(10))
                 .andExpect(jsonPath("$.totalCalories").value(550.0))
@@ -161,10 +181,11 @@ public class MealControllerTest {
     @Test
     @DisplayName("GET /meals/{mealId}/summary — deve retornar 404 quando refeição não existe")
     void getMealSummary_shouldReturn404WhenNotFound() throws Exception {
-        when(mealService.getMealSummary(99L))
+        when(mealService.getMealSummary(eq(99L), eq(1L)))
                 .thenThrow(new ResourceNotFoundException("Meal not found!"));
 
-        mockMvc.perform(get("/meals/99/summary"))
+        mockMvc.perform(get("/meals/99/summary")
+                        .with(authentication(authAs(1L))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Meal not found!"));
     }
@@ -174,9 +195,10 @@ public class MealControllerTest {
     @Test
     @DisplayName("DELETE /meals/{mealId} — deve deletar refeição e retornar 204")
     void deleteMeal_shouldReturn204() throws Exception {
-        doNothing().when(mealService).DeleteMeal(10L);
+        doNothing().when(mealService).DeleteMeal(eq(10L), eq(1L));
 
-        mockMvc.perform(delete("/meals/10"))
+        mockMvc.perform(delete("/meals/10")
+                        .with(authentication(authAs(1L))).with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
@@ -184,9 +206,10 @@ public class MealControllerTest {
     @DisplayName("DELETE /meals/{mealId} — deve retornar 404 quando refeição não existe")
     void deleteMeal_shouldReturn404WhenNotFound() throws Exception {
         doThrow(new ResourceNotFoundException("Meal not found!"))
-                .when(mealService).DeleteMeal(99L);
+                .when(mealService).DeleteMeal(eq(99L), eq(1L));
 
-        mockMvc.perform(delete("/meals/99"))
+        mockMvc.perform(delete("/meals/99")
+                        .with(authentication(authAs(1L))).with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Meal not found!"));
     }
@@ -196,9 +219,10 @@ public class MealControllerTest {
     @Test
     @DisplayName("DELETE /meals/{mealId}/foods/{mealFoodId} — deve deletar alimento e retornar 204")
     void deleteMealFood_shouldReturn204() throws Exception {
-        doNothing().when(mealService).DeleteMealFood(10L, 1L);
+        doNothing().when(mealService).DeleteMealFood(eq(10L), eq(1L), eq(1L));
 
-        mockMvc.perform(delete("/meals/10/foods/1"))
+        mockMvc.perform(delete("/meals/10/foods/1")
+                        .with(authentication(authAs(1L))).with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
@@ -206,9 +230,10 @@ public class MealControllerTest {
     @DisplayName("DELETE /meals/{mealId}/foods/{mealFoodId} — deve retornar 404 quando alimento não existe")
     void deleteMealFood_shouldReturn404WhenNotFound() throws Exception {
         doThrow(new ResourceNotFoundException("MealFood not found!"))
-                .when(mealService).DeleteMealFood(10L, 99L);
+                .when(mealService).DeleteMealFood(eq(10L), eq(99L), eq(1L));
 
-        mockMvc.perform(delete("/meals/10/foods/99"))
+        mockMvc.perform(delete("/meals/10/foods/99")
+                        .with(authentication(authAs(1L))).with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("MealFood not found!"));
     }
@@ -222,10 +247,11 @@ public class MealControllerTest {
         MealFoodResponse response = new MealFoodResponse(
                 1L, "Arroz", 200.0, "g", 260.0, 57.3, 5.3, 0.5);
 
-        when(mealService.updateMealFoodQuantity(eq(10L), eq(1L), eq(200.0)))
+        when(mealService.updateMealFoodQuantity(eq(10L), eq(1L), eq(200.0), eq(1L)))
                 .thenReturn(response);
 
         mockMvc.perform(patch("/meals/10/foods/1")
+                        .with(authentication(authAs(1L))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -239,6 +265,7 @@ public class MealControllerTest {
         UpdateMealFoodQuantityRequest request = new UpdateMealFoodQuantityRequest(-1.0);
 
         mockMvc.perform(patch("/meals/10/foods/1")
+                        .with(authentication(authAs(1L))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());

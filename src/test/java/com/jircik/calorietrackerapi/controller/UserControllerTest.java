@@ -8,6 +8,10 @@ import com.jircik.calorietrackerapi.domain.dto.response.SummaryResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealsByDateResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.UserResponse;
 import com.jircik.calorietrackerapi.exception.ResourceNotFoundException;
+import com.jircik.calorietrackerapi.security.JwtService;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import com.jircik.calorietrackerapi.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,15 +25,23 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
+import static com.jircik.calorietrackerapi.util.SecurityTestUtils.*;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
+@Import(UserControllerTest.MethodSecurityConfig.class)
 class UserControllerTest {
+
+    @EnableMethodSecurity
+    static class MethodSecurityConfig {}
 
     @Autowired
     private MockMvc mockMvc;
@@ -40,13 +52,19 @@ class UserControllerTest {
     @MockitoBean
     private UserService userService;
 
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private UserDetailsService userDetailsService;
+
     @Test
     @DisplayName("GET /users/{id} — deve retornar usuário quando encontrado")
     void getUser_shouldReturn200WhenFound() throws Exception {
         UserResponse response = new UserResponse(1L, "João", "joao@email.com", null, null, null, null, null, null, null, null);
         when(userService.getUser(1L)).thenReturn(response);
 
-        mockMvc.perform(get("/users/1"))
+        mockMvc.perform(get("/users/1").with(authentication(authAs(1L))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("João"));
@@ -58,10 +76,17 @@ class UserControllerTest {
         when(userService.getUser(99L))
                 .thenThrow(new ResourceNotFoundException("User not found"));
 
-        mockMvc.perform(get("/users/99"))
+        mockMvc.perform(get("/users/99").with(authentication(authAs(99L))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("User not found"));
+    }
+
+    @Test
+    @DisplayName("GET /users/{id} — deve retornar 403 quando token pertence a outro usuário")
+    void getUser_shouldReturn403WhenNotOwner() throws Exception {
+        mockMvc.perform(get("/users/1").with(authentication(authAs(2L))))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -73,7 +98,7 @@ class UserControllerTest {
         );
         when(userService.getAllUsers()).thenReturn(responses);
 
-        mockMvc.perform(get("/users"))
+        mockMvc.perform(get("/users").with(authentication(adminAuth())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].name").value("João"))
@@ -85,7 +110,7 @@ class UserControllerTest {
     void getAllUsers_shouldReturnEmptyList() throws Exception {
         when(userService.getAllUsers()).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/users"))
+        mockMvc.perform(get("/users").with(authentication(adminAuth())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
@@ -100,6 +125,7 @@ class UserControllerTest {
         when(userService.getPeriodSummary(any(GetSummaryRequest.class))).thenReturn(summaryResponse);
 
         mockMvc.perform(get("/users/1/daily-summary")
+                        .with(authentication(authAs(1L)))
                         .param("date", "2026-03-10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(1))
@@ -119,6 +145,7 @@ class UserControllerTest {
                 .thenReturn(response);
 
         mockMvc.perform(patch("/users/1/profile")
+                        .with(authentication(authAs(1L))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -136,6 +163,7 @@ class UserControllerTest {
                 .thenThrow(new ResourceNotFoundException("User not found"));
 
         mockMvc.perform(patch("/users/99/profile")
+                        .with(authentication(authAs(99L))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
@@ -152,6 +180,7 @@ class UserControllerTest {
         when(userService.getPeriodSummary(any(GetSummaryRequest.class))).thenReturn(response);
 
         mockMvc.perform(get("/users/1/summary")
+                        .with(authentication(authAs(1L)))
                         .param("startDate", "2026-04-09")
                         .param("periodType", "DAILY"))
                 .andExpect(status().isOk())
@@ -167,6 +196,7 @@ class UserControllerTest {
                 .thenThrow(new ResourceNotFoundException("Usuário não encontrado"));
 
         mockMvc.perform(get("/users/99/summary")
+                        .with(authentication(authAs(99L)))
                         .param("startDate", "2026-04-09")
                         .param("periodType", "DAILY"))
                 .andExpect(status().isNotFound())
@@ -183,6 +213,7 @@ class UserControllerTest {
         when(userService.getMealsByDate(eq(1L), eq(date))).thenReturn(response);
 
         mockMvc.perform(get("/users/1/meals")
+                        .with(authentication(authAs(1L)))
                         .param("date", "2026-03-10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(1))

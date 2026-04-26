@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -24,6 +25,7 @@ public class WaterController {
     private final WaterService waterService;
 
     @Operation(summary = "Log water intake", description = "Adds a water consumption entry for the user")
+    @PreAuthorize("#userId == authentication.principal.userId")
     @PostMapping
     public ResponseEntity<WaterLogResponse> logWater(
             @PathVariable Long userId,
@@ -33,6 +35,7 @@ public class WaterController {
     }
 
     @Operation(summary = "Get daily water intake", description = "Returns all water logs for a given date and the daily total")
+    @PreAuthorize("#userId == authentication.principal.userId")
     @GetMapping
     public ResponseEntity<DailyWaterResponse> getDailyWater(
             @PathVariable Long userId,
@@ -41,6 +44,7 @@ public class WaterController {
     }
 
     @Operation(summary = "Delete a water log entry")
+    @PreAuthorize("#userId == authentication.principal.userId")
     @DeleteMapping("/{logId}")
     public ResponseEntity<Void> deleteWaterLog(
             @PathVariable Long userId,

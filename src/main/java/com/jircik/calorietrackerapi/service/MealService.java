@@ -38,7 +38,18 @@ public class MealService {
         this.nutritionProvider = nutritionProvider;
     }
 
-    public MealResponse createMeal(Long userId, LocalDateTime date, MealTypeEnum mealType) {
+    private void verifyMealOwnership(Meal meal, Long callerUserId) {
+        if (!meal.getUser().getId().equals(callerUserId)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "Access denied");
+        }
+    }
+
+    public MealResponse createMeal(Long userId, LocalDateTime date, MealTypeEnum mealType, Long callerUserId) {
+        if (!userId.equals(callerUserId)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "Access denied");
+        }
         Meal meal = new Meal();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -57,10 +68,11 @@ public class MealService {
         );
     }
 
-    public MealFoodResponse addFoodToMeal(Long mealId, AddFoodToMealRequest request) {
+    public MealFoodResponse addFoodToMeal(Long mealId, AddFoodToMealRequest request, Long callerUserId) {
 
         Meal meal = mealRepository.findById(mealId)
                 .orElseThrow(() -> new ResourceNotFoundException("Meal not found"));
+        verifyMealOwnership(meal, callerUserId);
 
         Optional<MealFood> existingFood =
                 mealFoodRepository.findTopByFoodNameIgnoreCase(request.foodName());
@@ -108,9 +120,10 @@ public class MealService {
         );
     }
 
-    public MealSummaryResponse getMealSummary(Long mealId) {
-        mealRepository.findById(mealId)
+    public MealSummaryResponse getMealSummary(Long mealId, Long callerUserId) {
+        Meal meal = mealRepository.findById(mealId)
                 .orElseThrow(() -> new ResourceNotFoundException("Meal not found!"));
+        verifyMealOwnership(meal, callerUserId);
         List<MealFood> foods = mealFoodRepository.findByMeal_Id(mealId);
 
         Double totalCalories = foods.stream()
@@ -141,15 +154,17 @@ public class MealService {
         );
     }
 
-    public void DeleteMeal(Long mealId) {
-        if (mealRepository.existsById(mealId)) {
-            mealRepository.deleteById(mealId);
-        } else {
-            throw new ResourceNotFoundException("Meal not found!");
-        }
+    public void DeleteMeal(Long mealId, Long callerUserId) {
+        Meal meal = mealRepository.findById(mealId)
+                .orElseThrow(() -> new ResourceNotFoundException("Meal not found!"));
+        verifyMealOwnership(meal, callerUserId);
+        mealRepository.deleteById(mealId);
     }
 
-    public void DeleteMealFood(Long mealId, Long mealFoodId) {
+    public void DeleteMealFood(Long mealId, Long mealFoodId, Long callerUserId) {
+        Meal meal = mealRepository.findById(mealId)
+                .orElseThrow(() -> new ResourceNotFoundException("Meal not found!"));
+        verifyMealOwnership(meal, callerUserId);
         MealFood mealFood = mealFoodRepository
                 .findByIdAndMeal_Id(mealFoodId, mealId)
                 .orElseThrow(() -> new ResourceNotFoundException("MealFood not found!"));
@@ -157,7 +172,11 @@ public class MealService {
         mealFoodRepository.delete(mealFood);
     }
 
-    public MealFoodResponse updateMealFoodQuantity(Long mealId, Long mealFoodId, Double quantity) {
+    public MealFoodResponse updateMealFoodQuantity(Long mealId, Long mealFoodId, Double quantity, Long callerUserId) {
+        Meal meal = mealRepository.findById(mealId)
+                .orElseThrow(() -> new ResourceNotFoundException("Meal not found!"));
+        verifyMealOwnership(meal, callerUserId);
+
         if (quantity == null || quantity <= 0 ) {
             throw new RuntimeException("Invalid quantity");
         }
