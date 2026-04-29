@@ -7,8 +7,12 @@ import jakarta.validation.constraints.Positive;
 
 public record AddFoodToMealRequest(
 
-        @Schema(description = "Name of the food to look up via FatSecret", example = "chicken breast")
-        @NotBlank(message = "Food Name is required")
+        @Schema(description = "FatSecret food ID from GET /foods/search results", example = "34065")
+        @NotBlank(message = "Food ID is required")
+        String foodId,
+
+        @Schema(description = "Display name of the food (from search results)", example = "Chicken Breast, cooked")
+        @NotBlank(message = "Food name is required")
         String foodName,
 
         @Schema(description = "Quantity of the food", example = "150.0")

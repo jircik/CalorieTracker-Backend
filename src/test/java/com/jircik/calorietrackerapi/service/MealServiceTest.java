@@ -114,84 +114,25 @@ class MealServiceTest {
     class AddFoodToMeal {
 
         private final AddFoodToMealRequest request =
-                new AddFoodToMealRequest("Arroz", 150.0, "g");
+                new AddFoodToMealRequest("123", "Arroz", 150.0, "g");
 
         @Test
-        @DisplayName("deve buscar por nome quando alimento não existe no banco")
-        void shouldSearchByNameWhenFoodIsNew() {
-            NutritionResult nutrition = new NutritionResult(
-                    "123", "Arroz", 195.0, 43.0, 4.0, 0.4);
-
+        @DisplayName("deve adicionar alimento com sucesso usando foodId")
+        void shouldAddFoodByFoodId() {
+            NutritionResult nutrition = new NutritionResult("123", "Arroz", 195.0, 43.0, 4.0, 0.4);
             MealFood savedFood = MealFood.builder()
                     .id(1L).meal(testMeal).foodName("Arroz").fatSecretFoodId("123")
-                    .quantity(150.0).unit("g").calories(195.0).carbs(43.0)
-                    .protein(4.0).fat(0.4).build();
+                    .quantity(150.0).unit("g").calories(195.0).carbs(43.0).protein(4.0).fat(0.4).build();
 
             when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
-            when(mealFoodRepository.findTopByFoodNameIgnoreCase("Arroz"))
-                    .thenReturn(Optional.empty());
-            when(nutritionProvider.getNutrition("Arroz", 150.0)).thenReturn(nutrition);
+            when(nutritionProvider.calculateNutritionByFoodId("123", 150.0)).thenReturn(nutrition);
             when(mealFoodRepository.save(any(MealFood.class))).thenReturn(savedFood);
 
             MealFoodResponse response = mealService.addFoodToMeal(10L, request, 1L);
 
             assertThat(response.foodName()).isEqualTo("Arroz");
             assertThat(response.calories()).isEqualTo(195.0);
-            verify(nutritionProvider).getNutrition("Arroz", 150.0);
-            verify(nutritionProvider, never()).calculateNutritionByFoodId(any(), any());
-        }
-
-        @Test
-        @DisplayName("deve buscar por foodId quando alimento já existe com fatSecretFoodId")
-        void shouldSearchByIdWhenFoodExistsWithFatSecretId() {
-            MealFood existing = MealFood.builder()
-                    .foodName("Arroz").fatSecretFoodId("123").build();
-
-            NutritionResult nutrition = new NutritionResult(
-                    "123", "Arroz", 195.0, 43.0, 4.0, 0.4);
-
-            MealFood savedFood = MealFood.builder()
-                    .id(1L).meal(testMeal).foodName("Arroz").fatSecretFoodId("123")
-                    .quantity(150.0).unit("g").calories(195.0).carbs(43.0)
-                    .protein(4.0).fat(0.4).build();
-
-            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
-            when(mealFoodRepository.findTopByFoodNameIgnoreCase("Arroz"))
-                    .thenReturn(Optional.of(existing));
-            when(nutritionProvider.calculateNutritionByFoodId("123", 150.0))
-                    .thenReturn(nutrition);
-            when(mealFoodRepository.save(any(MealFood.class))).thenReturn(savedFood);
-
-            MealFoodResponse response = mealService.addFoodToMeal(10L, request, 1L);
-
-            assertThat(response.calories()).isEqualTo(195.0);
             verify(nutritionProvider).calculateNutritionByFoodId("123", 150.0);
-            verify(nutritionProvider, never()).getNutrition(any(), any());
-        }
-
-        @Test
-        @DisplayName("deve buscar por nome quando alimento existe mas sem fatSecretFoodId")
-        void shouldSearchByNameWhenExistingHasNoFatSecretId() {
-            MealFood existing = MealFood.builder()
-                    .foodName("Arroz").fatSecretFoodId(null).build();
-
-            NutritionResult nutrition = new NutritionResult(
-                    "123", "Arroz", 195.0, 43.0, 4.0, 0.4);
-
-            MealFood savedFood = MealFood.builder()
-                    .id(1L).meal(testMeal).foodName("Arroz").fatSecretFoodId("123")
-                    .quantity(150.0).unit("g").calories(195.0).carbs(43.0)
-                    .protein(4.0).fat(0.4).build();
-
-            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
-            when(mealFoodRepository.findTopByFoodNameIgnoreCase("Arroz"))
-                    .thenReturn(Optional.of(existing));
-            when(nutritionProvider.getNutrition("Arroz", 150.0)).thenReturn(nutrition);
-            when(mealFoodRepository.save(any(MealFood.class))).thenReturn(savedFood);
-
-            MealFoodResponse response = mealService.addFoodToMeal(10L, request, 1L);
-
-            verify(nutritionProvider).getNutrition("Arroz", 150.0);
         }
 
         @Test
@@ -202,6 +143,18 @@ class MealServiceTest {
             assertThatThrownBy(() -> mealService.addFoodToMeal(99L, request, 1L))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessage("Meal not found");
+        }
+
+        @Test
+        @DisplayName("deve lançar 403 quando caller não é o dono da refeição")
+        void shouldThrowForbiddenWhenNotOwner() {
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
+
+            assertThatThrownBy(() -> mealService.addFoodToMeal(10L, request, 2L))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                    .satisfies(e -> assertThat(
+                            ((org.springframework.web.server.ResponseStatusException) e).getStatusCode())
+                            .isEqualTo(org.springframework.http.HttpStatus.FORBIDDEN));
         }
     }
 

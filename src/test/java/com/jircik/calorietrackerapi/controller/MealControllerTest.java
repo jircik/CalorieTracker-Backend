@@ -120,7 +120,7 @@ public class MealControllerTest {
     @Test
     @DisplayName("POST /meals/{mealId}/foods — deve adicionar alimento e retornar 201")
     void addFoodToMeal_shouldReturn201() throws Exception {
-        AddFoodToMealRequest request = new AddFoodToMealRequest("Arroz", 150.0, "g");
+        AddFoodToMealRequest request = new AddFoodToMealRequest("123", "Arroz", 150.0, "g");
         MealFoodResponse response = new MealFoodResponse(
                 1L, "Arroz", 150.0, "g", 195.0, 43.0, 4.0, 0.4);
 
@@ -137,9 +137,9 @@ public class MealControllerTest {
     }
 
     @Test
-    @DisplayName("POST /meals/{mealId}/foods — deve retornar 400 quando foodName é vazio")
-    void addFoodToMeal_shouldReturn400WhenFoodNameBlank() throws Exception {
-        AddFoodToMealRequest request = new AddFoodToMealRequest("", 150.0, "g");
+    @DisplayName("POST /meals/{mealId}/foods — deve retornar 400 quando foodId é vazio")
+    void addFoodToMeal_shouldReturn400WhenFoodIdBlank() throws Exception {
+        AddFoodToMealRequest request = new AddFoodToMealRequest("", "Arroz", 150.0, "g");
 
         mockMvc.perform(post("/meals/10/foods")
                         .with(authentication(authAs(1L))).with(csrf())
@@ -151,7 +151,7 @@ public class MealControllerTest {
     @Test
     @DisplayName("POST /meals/{mealId}/foods — deve retornar 400 quando quantity é negativa")
     void addFoodToMeal_shouldReturn400WhenQuantityNegative() throws Exception {
-        AddFoodToMealRequest request = new AddFoodToMealRequest("Arroz", -1.0, "g");
+        AddFoodToMealRequest request = new AddFoodToMealRequest("123", "Arroz", -1.0, "g");
 
         mockMvc.perform(post("/meals/10/foods")
                         .with(authentication(authAs(1L))).with(csrf())

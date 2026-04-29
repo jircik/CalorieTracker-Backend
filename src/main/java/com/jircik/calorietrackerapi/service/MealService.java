@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class MealService {
@@ -69,35 +68,17 @@ public class MealService {
     }
 
     public MealFoodResponse addFoodToMeal(Long mealId, AddFoodToMealRequest request, Long callerUserId) {
-
         Meal meal = mealRepository.findById(mealId)
                 .orElseThrow(() -> new ResourceNotFoundException("Meal not found"));
         verifyMealOwnership(meal, callerUserId);
 
-        Optional<MealFood> existingFood =
-                mealFoodRepository.findTopByFoodNameIgnoreCase(request.foodName());
-
-        NutritionResult nutrition;
-
-        if (existingFood.isPresent() && existingFood.get().getFatSecretFoodId() != null) {
-
-            nutrition = nutritionProvider.calculateNutritionByFoodId(
-                    existingFood.get().getFatSecretFoodId(),
-                    request.quantity()
-            );
-
-        } else {
-
-            nutrition = nutritionProvider.getNutrition(
-                    request.foodName(),
-                    request.quantity()
-            );
-        }
+        NutritionResult nutrition = nutritionProvider.calculateNutritionByFoodId(
+                request.foodId(), request.quantity());
 
         MealFood mealFood = MealFood.builder()
                 .meal(meal)
                 .foodName(request.foodName())
-                .fatSecretFoodId(nutrition.foodId())
+                .fatSecretFoodId(request.foodId())
                 .quantity(request.quantity())
                 .unit(request.unit())
                 .calories(nutrition.calories())
@@ -116,8 +97,7 @@ public class MealService {
                 saved.getCalories(),
                 saved.getCarbs(),
                 saved.getProtein(),
-                saved.getFat()
-        );
+                saved.getFat());
     }
 
     public MealSummaryResponse getMealSummary(Long mealId, Long callerUserId) {

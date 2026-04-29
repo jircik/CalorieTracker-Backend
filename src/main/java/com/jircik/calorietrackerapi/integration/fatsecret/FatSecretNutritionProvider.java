@@ -1,29 +1,22 @@
 package com.jircik.calorietrackerapi.integration.fatsecret;
 
-import com.jircik.calorietrackerapi.domain.entity.Food;
 import com.jircik.calorietrackerapi.domain.entity.FoodNutrition;
 import com.jircik.calorietrackerapi.domain.fatsecret.NutritionProvider;
 import com.jircik.calorietrackerapi.domain.fatsecret.NutritionResult;
 import com.jircik.calorietrackerapi.integration.dto.FoodDetailsResponse;
-import com.jircik.calorietrackerapi.integration.dto.FoodSearchResponse;
 import com.jircik.calorietrackerapi.repository.FoodNutritionRepository;
-import com.jircik.calorietrackerapi.repository.FoodRepository;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 public class FatSecretNutritionProvider implements NutritionProvider {
 
     private final FatSecretFoodClient foodClient;
-    private final FoodRepository foodRepository;
     private final FoodNutritionRepository foodNutritionRepository;
 
     public FatSecretNutritionProvider(
             FatSecretFoodClient foodClient,
-            FoodRepository foodRepository, FoodNutritionRepository foodNutritionRepository) {
+            FoodNutritionRepository foodNutritionRepository) {
         this.foodClient = foodClient;
-        this.foodRepository = foodRepository;
         this.foodNutritionRepository = foodNutritionRepository;
     }
 
@@ -31,11 +24,7 @@ public class FatSecretNutritionProvider implements NutritionProvider {
         return Math.round(value * 100.0) / 100.0;
     }
 
-    private NutritionResult calculateFromDetails(
-            FoodDetailsResponse details,
-            Double quantityInGrams
-    ) {
-
+    private NutritionResult calculateFromDetails(FoodDetailsResponse details, Double quantityInGrams) {
         var servings = details.food().servings().serving();
 
         if (servings == null || servings.isEmpty()) {
@@ -51,8 +40,7 @@ public class FatSecretNutritionProvider implements NutritionProvider {
         }
 
         var baseServing = gramServings.stream()
-                .filter(s -> s.serving_description() != null &&
-                        s.serving_description().contains("100"))
+                .filter(s -> s.serving_description() != null && s.serving_description().contains("100"))
                 .findFirst()
                 .orElse(gramServings.getFirst());
 
@@ -76,23 +64,18 @@ public class FatSecretNutritionProvider implements NutritionProvider {
 
     @Override
     public NutritionResult calculateNutritionByFoodId(String foodId, Double quantityInGrams) {
-
         if (foodId == null || foodId.isBlank()) {
             throw new IllegalArgumentException("Food id must not be null");
         }
-
         if (quantityInGrams == null || quantityInGrams <= 0) {
             throw new IllegalArgumentException("Quantity must be greater than zero");
         }
 
         FoodNutrition cached = foodNutritionRepository.findById(foodId).orElse(null);
-
         if (cached != null) {
             double factor = quantityInGrams / 100.0;
-
             return new NutritionResult(
-                    foodId,
-                    null,
+                    foodId, null,
                     round(cached.getCaloriesPer100g() * factor),
                     round(cached.getCarbsPer100g() * factor),
                     round(cached.getProteinPer100g() * factor),
@@ -101,7 +84,6 @@ public class FatSecretNutritionProvider implements NutritionProvider {
         }
 
         FoodDetailsResponse details = foodClient.getFoodById(foodId);
-
         NutritionResult result = calculateFromDetails(details, quantityInGrams);
 
         FoodNutrition nutrition = FoodNutrition.builder()
@@ -113,41 +95,6 @@ public class FatSecretNutritionProvider implements NutritionProvider {
                 .build();
 
         foodNutritionRepository.save(nutrition);
-
         return result;
-    }
-
-    @Override
-    public NutritionResult getNutrition(String foodName, Double quantity) {
-
-        if (foodName == null || foodName.isBlank()) {
-            throw new IllegalArgumentException("Food name must not be null or blank");
-        }
-
-        if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Quantity must be greater than zero");
-        }
-
-        String normalized = foodName.trim().toLowerCase();
-
-        Optional<Food> existingFood = foodRepository.findByNameIgnoreCase(normalized);
-
-        if (existingFood.isPresent()) {
-            return calculateNutritionByFoodId(
-                    existingFood.get().getFatSecretFoodId(),
-                    quantity
-            );
-        }
-
-        FoodSearchResponse.Food food = foodClient.searchFirstFood(foodName);
-
-        Food newFood = Food.builder()
-                .name(normalized)
-                .fatSecretFoodId(food.food_id())
-                .build();
-
-        foodRepository.save(newFood);
-
-        return calculateNutritionByFoodId(food.food_id(), quantity);
     }
 }
