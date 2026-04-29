@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -30,7 +31,7 @@ class FatSecretFoodClientTest {
     private FatSecretAuthClient authClient;
 
     private Cache<String, FoodDetailsResponse> foodDetailsCache;
-    private Cache<String, FoodSearchResponse.Food> foodSearchCache;
+    private Cache<String, List<FoodSearchResponse.Food>> foodSearchCache;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -54,10 +55,10 @@ class FatSecretFoodClientTest {
         mockWebServer.shutdown();
     }
 
-    // searchFirstFood
+    // searchFoods
     @Nested
-    @DisplayName("searchFirstFood")
-    class SearchFirstFood {
+    @DisplayName("searchFoods")
+    class SearchFoods {
 
         private static final String VALID_SEARCH_JSON = """
                 {
@@ -70,46 +71,55 @@ class FatSecretFoodClientTest {
                                 "food_description": "Per 100g - Calories: 130",
                                 "food_type": "Generic",
                                 "food_url": null
+                            },
+                            {
+                                "food_id": "456",
+                                "food_name": "Arroz Integral",
+                                "brand_name": null,
+                                "food_description": "Per 100g - Calories: 111",
+                                "food_type": "Generic",
+                                "food_url": null
                             }
                         ],
-                        "max_results": "20",
+                        "max_results": "5",
                         "page_number": "0",
-                        "total_results": "1"
+                        "total_results": "2"
                     }
                 }
                 """;
 
         @Test
-        @DisplayName("deve retornar o primeiro alimento com resposta válida")
-        void shouldReturnFirstFoodOnValidResponse() throws InterruptedException {
+        @DisplayName("deve retornar lista de alimentos com resposta válida")
+        void shouldReturnFoodListOnValidResponse() throws InterruptedException {
             mockWebServer.enqueue(new MockResponse()
                     .setBody(VALID_SEARCH_JSON)
                     .addHeader("Content-Type", "application/json"));
 
-            FoodSearchResponse.Food result = foodClient.searchFirstFood("Arroz");
+            List<FoodSearchResponse.Food> result = foodClient.searchFoods("Arroz");
 
-            assertThat(result).isNotNull();
-            assertThat(result.food_id()).isEqualTo("123");
-            assertThat(result.food_name()).isEqualTo("Arroz Branco");
+            assertThat(result).hasSize(2);
+            assertThat(result.get(0).food_id()).isEqualTo("123");
+            assertThat(result.get(0).food_name()).isEqualTo("Arroz Branco");
 
             RecordedRequest request = mockWebServer.takeRequest();
             assertThat(request.getPath()).contains("/rest/foods/search/v1");
             assertThat(request.getPath()).contains("search_expression=Arroz");
+            assertThat(request.getPath()).contains("max_results=5");
             assertThat(request.getHeader("Authorization")).isEqualTo("Bearer fake-token");
         }
 
         @Test
-        @DisplayName("deve retornar alimento do cache na segunda chamada")
-        void shouldReturnCachedFoodOnSecondCall() {
+        @DisplayName("deve retornar lista do cache na segunda chamada")
+        void shouldReturnCachedListOnSecondCall() {
             mockWebServer.enqueue(new MockResponse()
                     .setBody(VALID_SEARCH_JSON)
                     .addHeader("Content-Type", "application/json"));
 
-            FoodSearchResponse.Food first = foodClient.searchFirstFood("Arroz");
-            FoodSearchResponse.Food second = foodClient.searchFirstFood("arroz");
+            List<FoodSearchResponse.Food> first = foodClient.searchFoods("Arroz");
+            List<FoodSearchResponse.Food> second = foodClient.searchFoods("arroz");
 
-            assertThat(first.food_id()).isEqualTo("123");
-            assertThat(second.food_id()).isEqualTo("123");
+            assertThat(first.get(0).food_id()).isEqualTo("123");
+            assertThat(second.get(0).food_id()).isEqualTo("123");
             assertThat(mockWebServer.getRequestCount()).isEqualTo(1);
         }
 
@@ -120,7 +130,7 @@ class FatSecretFoodClientTest {
                     {
                         "foods": {
                             "food": [],
-                            "max_results": "20",
+                            "max_results": "5",
                             "page_number": "0",
                             "total_results": "0"
                         }
@@ -131,9 +141,9 @@ class FatSecretFoodClientTest {
                     .setBody(emptyJson)
                     .addHeader("Content-Type", "application/json"));
 
-            assertThatThrownBy(() -> foodClient.searchFirstFood("xyznonexistent"))
+            assertThatThrownBy(() -> foodClient.searchFoods("xyznonexistent"))
                     .isInstanceOf(IntegrationException.class)
-                    .hasMessageContaining("Invalid response from FatSecret (searchFirstFood)");
+                    .hasMessageContaining("No results found for");
         }
 
         @Test
@@ -143,9 +153,9 @@ class FatSecretFoodClientTest {
                     .setBody("{}")
                     .addHeader("Content-Type", "application/json"));
 
-            assertThatThrownBy(() -> foodClient.searchFirstFood("anything"))
+            assertThatThrownBy(() -> foodClient.searchFoods("anything"))
                     .isInstanceOf(IntegrationException.class)
-                    .hasMessageContaining("Invalid response from FatSecret (searchFirstFood)");
+                    .hasMessageContaining("No results found for");
         }
 
         @Test
@@ -154,7 +164,7 @@ class FatSecretFoodClientTest {
             String nullFoodListJson = """
                     {
                         "foods": {
-                            "max_results": "20",
+                            "max_results": "5",
                             "page_number": "0",
                             "total_results": "0"
                         }
@@ -165,9 +175,9 @@ class FatSecretFoodClientTest {
                     .setBody(nullFoodListJson)
                     .addHeader("Content-Type", "application/json"));
 
-            assertThatThrownBy(() -> foodClient.searchFirstFood("anything"))
+            assertThatThrownBy(() -> foodClient.searchFoods("anything"))
                     .isInstanceOf(IntegrationException.class)
-                    .hasMessageContaining("Invalid response from FatSecret (searchFirstFood)");
+                    .hasMessageContaining("No results found for");
         }
 
         @Test
@@ -178,7 +188,7 @@ class FatSecretFoodClientTest {
                     .setBody("Not Found")
                     .addHeader("Content-Type", "text/plain"));
 
-            assertThatThrownBy(() -> foodClient.searchFirstFood("Arroz"))
+            assertThatThrownBy(() -> foodClient.searchFoods("Arroz"))
                     .isInstanceOf(IntegrationException.class)
                     .hasMessageContaining("FatSecret client error");
         }
@@ -191,7 +201,7 @@ class FatSecretFoodClientTest {
                     .setBody("Internal Server Error")
                     .addHeader("Content-Type", "text/plain"));
 
-            assertThatThrownBy(() -> foodClient.searchFirstFood("Arroz"))
+            assertThatThrownBy(() -> foodClient.searchFoods("Arroz"))
                     .isInstanceOf(IntegrationException.class)
                     .hasMessageContaining("FatSecret server error");
         }

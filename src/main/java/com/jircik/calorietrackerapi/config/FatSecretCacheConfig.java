@@ -8,13 +8,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
+import java.util.List;
 
 @Configuration
 public class FatSecretCacheConfig {
 
     @Bean
     public Cache<String, FoodDetailsResponse> foodDetailsCache() {
-
         return Caffeine.newBuilder()
                 .maximumSize(1000)
                 .expireAfterWrite(Duration.ofHours(6))
@@ -22,11 +22,10 @@ public class FatSecretCacheConfig {
     }
 
     @Bean
-    public Cache<String, FoodSearchResponse.Food> foodSearchCache() {
-
+    public Cache<String, List<FoodSearchResponse.Food>> foodSearchCache() {
         return Caffeine.newBuilder()
-                .maximumSize(1000)
-                .expireAfterWrite(Duration.ofHours(6))
+                .maximumSize(500)
+                .expireAfterWrite(Duration.ofHours(1))
                 .build();
     }
 }

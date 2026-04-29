@@ -8,18 +8,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import com.github.benmanes.caffeine.cache.Cache;
 
+import java.util.List;
+
 @Service
 public class FatSecretFoodClient {
 
     private final WebClient webClient;
     private final FatSecretAuthClient authClient;
     private final Cache<String, FoodDetailsResponse> foodDetailsCache;
-    private final Cache<String, FoodSearchResponse.Food> foodSearchCache;
-
+    private final Cache<String, List<FoodSearchResponse.Food>> foodSearchCache;
 
     public FatSecretFoodClient(WebClient fatSecretApiWebClient,
                                FatSecretAuthClient authClient,
-                               Cache<String, FoodDetailsResponse> foodDetailsCache, Cache<String, FoodSearchResponse.Food> foodSearchCache) {
+                               Cache<String, FoodDetailsResponse> foodDetailsCache,
+                               Cache<String, List<FoodSearchResponse.Food>> foodSearchCache) {
         this.webClient = fatSecretApiWebClient;
         this.authClient = authClient;
         this.foodDetailsCache = foodDetailsCache;
@@ -30,22 +32,18 @@ public class FatSecretFoodClient {
         return foodName.trim().toLowerCase().replaceAll("\\s+", " ");
     }
 
-    public FoodSearchResponse.Food searchFirstFood(String foodName) {
-
-        String normalized =  normalizeFoodName(foodName);
-
-        FoodSearchResponse.Food cached = foodSearchCache.getIfPresent(normalized);
-
-        if (cached != null) {
-            return cached;
-        }
+    public List<FoodSearchResponse.Food> searchFoods(String query) {
+        String normalized = normalizeFoodName(query);
+        List<FoodSearchResponse.Food> cached = foodSearchCache.getIfPresent(normalized);
+        if (cached != null) return cached;
 
         String token = authClient.getValidToken();
 
         FoodSearchResponse response = webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/rest/foods/search/v1")
-                        .queryParam("search_expression", foodName)
+                        .queryParam("search_expression", query)
+                        .queryParam("max_results", 5)
                         .queryParam("format", "json")
                         .build())
                 .header("Authorization", "Bearer " + token)
@@ -65,24 +63,17 @@ public class FatSecretFoodClient {
                 || response.foods() == null
                 || response.foods().food() == null
                 || response.foods().food().isEmpty()) {
-
-            throw new IntegrationException("Invalid response from FatSecret (searchFirstFood)");
+            throw new IntegrationException("No results found for: " + query);
         }
 
-        FoodSearchResponse.Food result = response.foods().food().getFirst();
-
-        foodSearchCache.put(normalized, result);
-
-        return result;
+        List<FoodSearchResponse.Food> results = response.foods().food().stream().limit(5).toList();
+        foodSearchCache.put(normalized, results);
+        return results;
     }
 
     public FoodDetailsResponse getFoodById(String foodId) {
-
         FoodDetailsResponse cached = foodDetailsCache.getIfPresent(foodId);
-
-        if (cached != null){
-            return cached;
-        }
+        if (cached != null) return cached;
 
         String token = authClient.getValidToken();
 
@@ -112,7 +103,6 @@ public class FatSecretFoodClient {
         }
 
         foodDetailsCache.put(foodId, response);
-
         return response;
     }
 }
