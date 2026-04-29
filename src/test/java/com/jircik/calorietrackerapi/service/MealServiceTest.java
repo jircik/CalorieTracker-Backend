@@ -76,7 +76,7 @@ class MealServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(mealRepository.save(any(Meal.class))).thenReturn(testMeal);
 
-            MealResponse response = mealService.createMeal(1L, dateTime, MealTypeEnum.BREAKFAST, 1L);
+            MealResponse response = mealService.createMeal(1L, dateTime, MealTypeEnum.BREAKFAST);
 
             assertThat(response.id()).isEqualTo(10L);
             assertThat(response.userId()).isEqualTo(1L);
@@ -89,22 +89,9 @@ class MealServiceTest {
         void shouldThrowWhenUserNotFound() {
             when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> mealService.createMeal(99L, LocalDateTime.now(), MealTypeEnum.BREAKFAST, 99L))
+            assertThatThrownBy(() -> mealService.createMeal(99L, LocalDateTime.now(), MealTypeEnum.BREAKFAST))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessage("User not found");
-        }
-
-        @Test
-        @DisplayName("deve lançar 403 quando userId não corresponde ao caller")
-        void shouldThrowForbiddenWhenUserIdNotMatchesCaller() {
-            assertThatThrownBy(() -> mealService.createMeal(
-                            1L, LocalDateTime.now(), MealTypeEnum.BREAKFAST, 2L))
-                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
-                    .satisfies(e -> {
-                        org.springframework.web.server.ResponseStatusException rse =
-                                (org.springframework.web.server.ResponseStatusException) e;
-                        assertThat(rse.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.FORBIDDEN);
-                    });
         }
     }
 

@@ -44,11 +44,7 @@ public class MealService {
         }
     }
 
-    public MealResponse createMeal(Long userId, LocalDateTime date, MealTypeEnum mealType, Long callerUserId) {
-        if (!userId.equals(callerUserId)) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.FORBIDDEN, "Access denied");
-        }
+    public MealResponse createMeal(Long userId, LocalDateTime date, MealTypeEnum mealType) {
         Meal meal = new Meal();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));

@@ -27,17 +27,15 @@ public class MealController {
         this.mealService = mealService;
     }
 
-    @Operation(summary = "Create a meal", description = "Creates a new meal for a user with a specified date/time and meal type")
+    @Operation(summary = "Create a meal", description = "Creates a new meal for the authenticated user with a specified date/time and meal type")
     @PostMapping
     public ResponseEntity<MealResponse> createMeal(
             @Valid @RequestBody CreateMealRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
 
         MealResponse newMeal = mealService.createMeal(
-                request.userId(), request.dateTime(), request.mealType(), principal.userId());
-
+                principal.userId(), request.dateTime(), request.mealType());
         return ResponseEntity.status(HttpStatus.CREATED).body(newMeal);
-
     }
 
     @Operation(summary = "Add food to a meal", description = "Looks up nutritional data via FatSecret and adds the food with calculated macros to the meal")

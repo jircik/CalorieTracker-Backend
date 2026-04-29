@@ -63,10 +63,10 @@ public class MealControllerTest {
     @DisplayName("POST /meals — deve criar refeição e retornar 201")
     void createMeal_shouldReturn201() throws Exception {
         LocalDateTime dateTime = LocalDateTime.of(2026, 3, 10, 12, 0);
-        CreateMealRequest request = new CreateMealRequest(1L, dateTime, MealTypeEnum.BREAKFAST);
+        CreateMealRequest request = new CreateMealRequest(dateTime, MealTypeEnum.BREAKFAST);
         MealResponse response = new MealResponse(10L, 1L, dateTime, MealTypeEnum.BREAKFAST, LocalDateTime.now());
 
-        when(mealService.createMeal(eq(1L), eq(dateTime), eq(MealTypeEnum.BREAKFAST), eq(1L)))
+        when(mealService.createMeal(eq(1L), eq(dateTime), eq(MealTypeEnum.BREAKFAST)))
                 .thenReturn(response);
 
         mockMvc.perform(post("/meals")
@@ -80,21 +80,9 @@ public class MealControllerTest {
     }
 
     @Test
-    @DisplayName("POST /meals — deve retornar 400 quando userId é nulo")
-    void createMeal_shouldReturn400WhenUserIdNull() throws Exception {
-        CreateMealRequest request = new CreateMealRequest(null, LocalDateTime.now(), MealTypeEnum.LUNCH);
-
-        mockMvc.perform(post("/meals")
-                        .with(authentication(authAs(1L))).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     @DisplayName("POST /meals — deve retornar 400 quando dateTime é nulo")
     void createMeal_shouldReturn400WhenDateTimeNull() throws Exception {
-        CreateMealRequest request = new CreateMealRequest(1L, null, MealTypeEnum.LUNCH);
+        CreateMealRequest request = new CreateMealRequest(null, MealTypeEnum.LUNCH);
 
         mockMvc.perform(post("/meals")
                         .with(authentication(authAs(1L))).with(csrf())
@@ -106,7 +94,7 @@ public class MealControllerTest {
     @Test
     @DisplayName("POST /meals — deve retornar 400 quando mealType é nulo")
     void createMeal_shouldReturn400WhenMealTypeNull() throws Exception {
-        CreateMealRequest request = new CreateMealRequest(1L, LocalDateTime.now(), null);
+        CreateMealRequest request = new CreateMealRequest(LocalDateTime.now(), null);
 
         mockMvc.perform(post("/meals")
                         .with(authentication(authAs(1L))).with(csrf())
