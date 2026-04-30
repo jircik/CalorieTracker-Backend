@@ -244,7 +244,8 @@ class MealServiceTest {
         void shouldThrowWhenQuantityIsZero() {
             when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
             assertThatThrownBy(() -> mealService.updateMealFoodQuantity(10L, 1L, 0.0, 1L))
-                    .isInstanceOf(RuntimeException.class);
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Quantity must be greater than zero");
         }
 
         @Test
@@ -252,7 +253,8 @@ class MealServiceTest {
         void shouldThrowWhenQuantityIsNegative() {
             when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
             assertThatThrownBy(() -> mealService.updateMealFoodQuantity(10L, 1L, -10.0, 1L))
-                    .isInstanceOf(RuntimeException.class);
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Quantity must be greater than zero");
         }
     }
 
@@ -279,7 +281,7 @@ class MealServiceTest {
             assertThat(response.totalProtein()).isEqualTo(35.0);
             assertThat(response.totalCarbs()).isEqualTo(70.0);
             assertThat(response.totalFat()).isEqualTo(17.0);
-            assertThat(response.foodCount()).isEqualTo(2.0);
+            assertThat(response.foodCount()).isEqualTo(2);
         }
 
         @Test
@@ -291,7 +293,7 @@ class MealServiceTest {
             MealSummaryResponse response = mealService.getMealSummary(10L, 1L);
 
             assertThat(response.totalCalories()).isEqualTo(0.0);
-            assertThat(response.foodCount()).isEqualTo(0.0);
+            assertThat(response.foodCount()).isEqualTo(0);
         }
 
         @Test

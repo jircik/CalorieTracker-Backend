@@ -10,16 +10,16 @@ public record MealSummaryResponse(
         @Schema(description = "Total calories across all foods in this meal")
         Double totalCalories,
 
-        @Schema(description = "Total protein in grams across all foods in this meal")
+        @Schema(description = "Total protein in grams")
         Double totalProtein,
 
-        @Schema(description = "Total carbohydrates in grams across all foods in this meal")
+        @Schema(description = "Total carbohydrates in grams")
         Double totalCarbs,
 
-        @Schema(description = "Total fat in grams across all foods in this meal")
+        @Schema(description = "Total fat in grams")
         Double totalFat,
 
         @Schema(description = "Number of food entries in this meal")
-        Double foodCount
+        Integer foodCount
 
 ) {}

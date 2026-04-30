@@ -119,15 +119,13 @@ public class MealService {
                 .mapToDouble(MealFood::getFat)
                 .sum();
 
-        Double totalFoods = (double) foods.size();
-
         return new MealSummaryResponse(
                 mealId,
                 totalCalories,
                 totalProtein,
                 totalCarbs,
                 totalFat,
-                totalFoods
+                foods.size()
         );
     }
 
@@ -177,7 +175,7 @@ public class MealService {
         verifyMealOwnership(meal, callerUserId);
 
         if (quantity == null || quantity <= 0 ) {
-            throw new RuntimeException("Invalid quantity");
+            throw new IllegalArgumentException("Quantity must be greater than zero");
         }
 
         MealFood currentMealFood = mealFoodRepository

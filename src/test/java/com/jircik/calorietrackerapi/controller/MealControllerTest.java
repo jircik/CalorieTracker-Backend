@@ -156,7 +156,7 @@ public class MealControllerTest {
     @DisplayName("GET /meals/{mealId}/summary — deve retornar resumo da refeição")
     void getMealSummary_shouldReturn200() throws Exception {
         MealSummaryResponse response = new MealSummaryResponse(
-                10L, 550.0, 35.0, 70.0, 17.0, 2.0);
+                10L, 550.0, 35.0, 70.0, 17.0, 2);
 
         when(mealService.getMealSummary(eq(10L), eq(1L))).thenReturn(response);
 
@@ -165,7 +165,7 @@ public class MealControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mealId").value(10))
                 .andExpect(jsonPath("$.totalCalories").value(550.0))
-                .andExpect(jsonPath("$.foodCount").value(2.0));
+                .andExpect(jsonPath("$.foodCount").value(2));
     }
 
     @Test
