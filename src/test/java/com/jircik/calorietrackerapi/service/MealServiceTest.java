@@ -4,6 +4,7 @@ import com.jircik.calorietrackerapi.domain.dto.request.AddFoodToMealRequest;
 import com.jircik.calorietrackerapi.domain.dto.response.MealFoodResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealSummaryResponse;
+import com.jircik.calorietrackerapi.domain.dto.response.MealWithFoodsResponse;
 import com.jircik.calorietrackerapi.domain.entity.Meal;
 import com.jircik.calorietrackerapi.domain.entity.MealFood;
 import com.jircik.calorietrackerapi.domain.entity.MealTypeEnum;
@@ -315,6 +316,69 @@ class MealServiceTest {
                                 (org.springframework.web.server.ResponseStatusException) e;
                         assertThat(rse.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.FORBIDDEN);
                     });
+        }
+    }
+
+    // getMealWithFoods
+    @Nested
+    @DisplayName("getMealWithFoods")
+    class GetMealWithFoods {
+
+        @Test
+        @DisplayName("deve retornar refeição com alimentos e totais calculados")
+        void shouldReturnMealWithFoodsAndTotals() {
+            MealFood food1 = MealFood.builder()
+                    .id(1L).meal(testMeal).foodName("Arroz").fatSecretFoodId("123")
+                    .quantity(150.0).unit("g").calories(195.0).carbs(43.0).protein(4.0).fat(0.4).build();
+            MealFood food2 = MealFood.builder()
+                    .id(2L).meal(testMeal).foodName("Feijão").fatSecretFoodId("456")
+                    .quantity(100.0).unit("g").calories(77.0).carbs(14.0).protein(5.0).fat(0.5).build();
+
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
+            when(mealFoodRepository.findByMeal_Id(10L)).thenReturn(List.of(food1, food2));
+
+            MealWithFoodsResponse response = mealService.getMealWithFoods(10L, 1L);
+
+            assertThat(response.mealId()).isEqualTo(10L);
+            assertThat(response.foods()).hasSize(2);
+            assertThat(response.totalCalories()).isEqualTo(272.0);
+            assertThat(response.totalProtein()).isEqualTo(9.0);
+            assertThat(response.totalCarbs()).isEqualTo(57.0);
+            assertThat(response.totalFat()).isEqualTo(0.9);
+        }
+
+        @Test
+        @DisplayName("deve retornar refeição vazia sem alimentos")
+        void shouldReturnMealWithNoFoods() {
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
+            when(mealFoodRepository.findByMeal_Id(10L)).thenReturn(Collections.emptyList());
+
+            MealWithFoodsResponse response = mealService.getMealWithFoods(10L, 1L);
+
+            assertThat(response.foods()).isEmpty();
+            assertThat(response.totalCalories()).isEqualTo(0.0);
+        }
+
+        @Test
+        @DisplayName("deve lançar exceção quando refeição não existir")
+        void shouldThrowWhenMealNotFound() {
+            when(mealRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> mealService.getMealWithFoods(99L, 1L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessage("Meal not found");
+        }
+
+        @Test
+        @DisplayName("deve lançar 403 quando caller não é o dono")
+        void shouldThrowForbiddenWhenNotOwner() {
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
+
+            assertThatThrownBy(() -> mealService.getMealWithFoods(10L, 2L))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                    .satisfies(e -> assertThat(
+                            ((org.springframework.web.server.ResponseStatusException) e).getStatusCode())
+                            .isEqualTo(org.springframework.http.HttpStatus.FORBIDDEN));
         }
     }
 }

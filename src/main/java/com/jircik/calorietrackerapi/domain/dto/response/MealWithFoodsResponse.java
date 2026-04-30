@@ -18,6 +18,18 @@ public record MealWithFoodsResponse(
         MealTypeEnum mealType,
 
         @Schema(description = "List of food entries in this meal")
-        List<MealFoodResponse> foods
+        List<MealFoodResponse> foods,
+
+        @Schema(description = "Total calories across all foods in this meal")
+        Double totalCalories,
+
+        @Schema(description = "Total protein in grams")
+        Double totalProtein,
+
+        @Schema(description = "Total carbohydrates in grams")
+        Double totalCarbs,
+
+        @Schema(description = "Total fat in grams")
+        Double totalFat
 
 ) {}

@@ -7,6 +7,7 @@ import com.jircik.calorietrackerapi.domain.dto.request.UpdateMealFoodQuantityReq
 import com.jircik.calorietrackerapi.domain.dto.response.MealFoodResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealSummaryResponse;
+import com.jircik.calorietrackerapi.domain.dto.response.MealWithFoodsResponse;
 import com.jircik.calorietrackerapi.security.UserPrincipal;
 import com.jircik.calorietrackerapi.service.MealService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,6 +57,14 @@ public class MealController {
             @AuthenticationPrincipal UserPrincipal principal) {
 
         return ResponseEntity.ok(mealService.getMealSummary(mealId, principal.userId()));
+    }
+
+    @Operation(summary = "Get meal with foods", description = "Returns the meal and all its food entries with per-meal macro totals")
+    @GetMapping("/{mealId}")
+    public ResponseEntity<MealWithFoodsResponse> getMeal(
+            @PathVariable Long mealId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(mealService.getMealWithFoods(mealId, principal.userId()));
     }
 
     @Operation(summary = "Delete a meal", description = "Deletes the meal and all its associated foods (cascade delete)")

@@ -8,6 +8,7 @@ import com.jircik.calorietrackerapi.domain.dto.request.UpdateMealFoodQuantityReq
 import com.jircik.calorietrackerapi.domain.dto.response.MealFoodResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealSummaryResponse;
+import com.jircik.calorietrackerapi.domain.dto.response.MealWithFoodsResponse;
 import com.jircik.calorietrackerapi.domain.entity.MealTypeEnum;
 import com.jircik.calorietrackerapi.exception.ResourceNotFoundException;
 import com.jircik.calorietrackerapi.security.JwtService;
@@ -22,6 +23,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static com.jircik.calorietrackerapi.util.SecurityTestUtils.*;
 
@@ -176,6 +178,36 @@ public class MealControllerTest {
                         .with(authentication(authAs(1L))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Meal not found!"));
+    }
+
+    // ── getMeal ───────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("GET /meals/{mealId} — deve retornar refeição com alimentos")
+    void getMeal_shouldReturn200() throws Exception {
+        MealWithFoodsResponse response = new MealWithFoodsResponse(
+                10L, LocalDateTime.of(2026, 3, 10, 12, 0), MealTypeEnum.LUNCH,
+                List.of(), 0.0, 0.0, 0.0, 0.0);
+
+        when(mealService.getMealWithFoods(eq(10L), eq(1L))).thenReturn(response);
+
+        mockMvc.perform(get("/meals/10")
+                        .with(authentication(authAs(1L))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mealId").value(10))
+                .andExpect(jsonPath("$.mealType").value("LUNCH"))
+                .andExpect(jsonPath("$.totalCalories").value(0.0));
+    }
+
+    @Test
+    @DisplayName("GET /meals/{mealId} — deve retornar 404 quando não encontrado")
+    void getMeal_shouldReturn404() throws Exception {
+        when(mealService.getMealWithFoods(eq(99L), eq(1L)))
+                .thenThrow(new ResourceNotFoundException("Meal not found"));
+
+        mockMvc.perform(get("/meals/99")
+                        .with(authentication(authAs(1L))))
+                .andExpect(status().isNotFound());
     }
 
     // ── deleteMeal ────────────────────────────────────────────────────────────

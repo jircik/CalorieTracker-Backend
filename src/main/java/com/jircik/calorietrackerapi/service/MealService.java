@@ -4,6 +4,7 @@ import com.jircik.calorietrackerapi.domain.dto.request.AddFoodToMealRequest;
 import com.jircik.calorietrackerapi.domain.dto.response.MealFoodResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealSummaryResponse;
+import com.jircik.calorietrackerapi.domain.dto.response.MealWithFoodsResponse;
 import com.jircik.calorietrackerapi.domain.entity.Meal;
 import com.jircik.calorietrackerapi.domain.entity.MealFood;
 import com.jircik.calorietrackerapi.domain.entity.MealTypeEnum;
@@ -128,6 +129,28 @@ public class MealService {
                 totalFat,
                 totalFoods
         );
+    }
+
+    public MealWithFoodsResponse getMealWithFoods(Long mealId, Long callerUserId) {
+        Meal meal = mealRepository.findById(mealId)
+                .orElseThrow(() -> new ResourceNotFoundException("Meal not found"));
+        verifyMealOwnership(meal, callerUserId);
+
+        List<MealFood> foods = mealFoodRepository.findByMeal_Id(mealId);
+        List<MealFoodResponse> foodResponses = foods.stream()
+                .map(f -> new MealFoodResponse(
+                        f.getId(), f.getFoodName(), f.getQuantity(), f.getUnit(),
+                        f.getCalories(), f.getCarbs(), f.getProtein(), f.getFat()))
+                .toList();
+
+        double totalCalories = foods.stream().mapToDouble(MealFood::getCalories).sum();
+        double totalProtein  = foods.stream().mapToDouble(MealFood::getProtein).sum();
+        double totalCarbs    = foods.stream().mapToDouble(MealFood::getCarbs).sum();
+        double totalFat      = foods.stream().mapToDouble(MealFood::getFat).sum();
+
+        return new MealWithFoodsResponse(
+                meal.getId(), meal.getDatetime(), meal.getMealType(),
+                foodResponses, totalCalories, totalProtein, totalCarbs, totalFat);
     }
 
     public void DeleteMeal(Long mealId, Long callerUserId) {

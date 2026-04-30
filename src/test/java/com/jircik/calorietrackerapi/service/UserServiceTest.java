@@ -454,6 +454,8 @@ class UserServiceTest {
             assertThat(response.meals()).containsKey(MealTypeEnum.LUNCH);
             assertThat(response.meals().get(MealTypeEnum.LUNCH)).isNotNull();
             assertThat(response.meals().get(MealTypeEnum.LUNCH).foods()).hasSize(2);
+            assertThat(response.meals().get(MealTypeEnum.LUNCH).totalCalories())
+                    .isEqualTo(food1.getCalories() + food2.getCalories());
         }
 
         @Test

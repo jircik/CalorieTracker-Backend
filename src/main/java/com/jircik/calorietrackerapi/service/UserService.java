@@ -122,7 +122,6 @@ public class UserService {
             if (typeFoods == null) {
                 mealsMap.put(type, null);
             } else {
-                Meal meal = typeFoods.getFirst().getMeal();
                 List<MealFoodResponse> foodResponses = typeFoods.stream()
                         .map(food -> new MealFoodResponse(
                                 food.getId(),
@@ -135,11 +134,22 @@ public class UserService {
                                 food.getFat()
                         ))
                         .toList();
+
+                double totalCalories = foodResponses.stream().mapToDouble(MealFoodResponse::calories).sum();
+                double totalProtein  = foodResponses.stream().mapToDouble(MealFoodResponse::protein).sum();
+                double totalCarbs    = foodResponses.stream().mapToDouble(MealFoodResponse::carbs).sum();
+                double totalFat      = foodResponses.stream().mapToDouble(MealFoodResponse::fat).sum();
+
+                Meal meal = typeFoods.getFirst().getMeal();
                 mealsMap.put(type, new MealWithFoodsResponse(
                         meal.getId(),
                         meal.getDatetime(),
                         meal.getMealType(),
-                        foodResponses
+                        foodResponses,
+                        totalCalories,
+                        totalProtein,
+                        totalCarbs,
+                        totalFat
                 ));
             }
         }
