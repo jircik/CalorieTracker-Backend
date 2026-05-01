@@ -66,9 +66,9 @@ class FoodControllerTest {
     }
 
     @Test
-    @DisplayName("GET /foods/search — deve retornar 403 sem token")
-    void searchFoods_shouldReturn403WithoutAuth() throws Exception {
+    @DisplayName("GET /foods/search — deve retornar 401 sem token")
+    void searchFoods_shouldReturn401WithoutAuth() throws Exception {
         mockMvc.perform(get("/foods/search").param("q", "arroz"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }
