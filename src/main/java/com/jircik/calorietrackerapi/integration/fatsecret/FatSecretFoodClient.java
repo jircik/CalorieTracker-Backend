@@ -14,16 +14,13 @@ import java.util.List;
 public class FatSecretFoodClient {
 
     private final WebClient webClient;
-    private final FatSecretAuthClient authClient;
     private final Cache<String, FoodDetailsResponse> foodDetailsCache;
     private final Cache<String, List<FoodSearchResponse.Food>> foodSearchCache;
 
     public FatSecretFoodClient(WebClient fatSecretApiWebClient,
-                               FatSecretAuthClient authClient,
                                Cache<String, FoodDetailsResponse> foodDetailsCache,
                                Cache<String, List<FoodSearchResponse.Food>> foodSearchCache) {
         this.webClient = fatSecretApiWebClient;
-        this.authClient = authClient;
         this.foodDetailsCache = foodDetailsCache;
         this.foodSearchCache = foodSearchCache;
     }
@@ -37,16 +34,11 @@ public class FatSecretFoodClient {
         List<FoodSearchResponse.Food> cached = foodSearchCache.getIfPresent(normalized);
         if (cached != null) return cached;
 
-        String token = authClient.getValidToken();
-
         FoodSearchResponse response = webClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/rest/foods/search/v1")
-                        .queryParam("search_expression", query)
-                        .queryParam("max_results", 5)
-                        .queryParam("format", "json")
+                        .path("/search")
+                        .queryParam("q", query)
                         .build())
-                .header("Authorization", "Bearer " + token)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
                         clientResponse.bodyToMono(String.class)
@@ -75,15 +67,8 @@ public class FatSecretFoodClient {
         FoodDetailsResponse cached = foodDetailsCache.getIfPresent(foodId);
         if (cached != null) return cached;
 
-        String token = authClient.getValidToken();
-
         FoodDetailsResponse response = webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/rest/food/v5")
-                        .queryParam("food_id", foodId)
-                        .queryParam("format", "json")
-                        .build())
-                .header("Authorization", "Bearer " + token)
+                .uri("/food/{id}", foodId)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
                         clientResponse.bodyToMono(String.class)

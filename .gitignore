@@ -6,3 +6,5 @@ out/
 HELP.md
 /target
 /dev.http
+/.wrangler/
+/cloudflare-worker/.wrangler/

@@ -18,8 +18,8 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 fatsecret:
-  client-id: ${FATSECRET_CLIENT_ID}
-  client-secret: ${FATSECRET_CLIENT_SECRET}
+  worker-url: ${FATSECRET_WORKER_URL}
+  proxy-key: ${FATSECRET_PROXY_KEY}
 
 application:
   security:

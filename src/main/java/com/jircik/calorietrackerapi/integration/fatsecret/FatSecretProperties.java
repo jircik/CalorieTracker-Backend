@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Setter
 public class FatSecretProperties {
 
-    private String clientId;
-    private String clientSecret;
+    private String workerUrl;
+    private String proxyKey;
 
 }

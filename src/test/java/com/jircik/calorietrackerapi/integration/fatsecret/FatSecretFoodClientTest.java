@@ -9,26 +9,18 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 @DisplayName("FatSecretFoodClient")
 class FatSecretFoodClientTest {
 
     private MockWebServer mockWebServer;
     private FatSecretFoodClient foodClient;
-
-    @Mock
-    private FatSecretAuthClient authClient;
 
     private Cache<String, FoodDetailsResponse> foodDetailsCache;
     private Cache<String, List<FoodSearchResponse.Food>> foodSearchCache;
@@ -45,9 +37,7 @@ class FatSecretFoodClientTest {
         foodDetailsCache = Caffeine.newBuilder().build();
         foodSearchCache = Caffeine.newBuilder().build();
 
-        foodClient = new FatSecretFoodClient(webClient, authClient, foodDetailsCache, foodSearchCache);
-
-        lenient().when(authClient.getValidToken()).thenReturn("fake-token");
+        foodClient = new FatSecretFoodClient(webClient, foodDetailsCache, foodSearchCache);
     }
 
     @AfterEach
@@ -102,10 +92,8 @@ class FatSecretFoodClientTest {
             assertThat(result.get(0).food_name()).isEqualTo("Arroz Branco");
 
             RecordedRequest request = mockWebServer.takeRequest();
-            assertThat(request.getPath()).contains("/rest/foods/search/v1");
-            assertThat(request.getPath()).contains("search_expression=Arroz");
-            assertThat(request.getPath()).contains("max_results=5");
-            assertThat(request.getHeader("Authorization")).isEqualTo("Bearer fake-token");
+            assertThat(request.getPath()).contains("/search");
+            assertThat(request.getPath()).contains("q=Arroz");
         }
 
         @Test
@@ -253,9 +241,7 @@ class FatSecretFoodClientTest {
             assertThat(result.food().servings().serving()).hasSize(1);
 
             RecordedRequest request = mockWebServer.takeRequest();
-            assertThat(request.getPath()).contains("/rest/food/v5");
-            assertThat(request.getPath()).contains("food_id=456");
-            assertThat(request.getHeader("Authorization")).isEqualTo("Bearer fake-token");
+            assertThat(request.getPath()).startsWith("/food/456");
         }
 
         @Test

@@ -1,0 +1,7 @@
+name = "fatsecret-proxy"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "FATSECRET_TOKEN_KV"
+id = "0be0e585e01d4199a5ea998d8f3f3fd1"
