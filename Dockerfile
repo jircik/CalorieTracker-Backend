@@ -16,5 +16,6 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /app/app.jar app.jar
 
+ENV SPRING_PROFILES_ACTIVE=prod
 EXPOSE 8080
 ENTRYPOINT ["sh","-c","exec java $JAVA_OPTS -jar /app/app.jar"]
