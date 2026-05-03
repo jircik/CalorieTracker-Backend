@@ -20,6 +20,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.time.LocalDateTime;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -55,7 +57,25 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, e) -> {
+                            response.setStatus(401);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write(String.format(
+                                    "{\"status\":401,\"message\":\"Authentication required\",\"path\":\"%s\",\"timestamp\":\"%s\"}",
+                                    request.getRequestURI(), LocalDateTime.now()
+                            ));
+                        })
+                        .accessDeniedHandler((request, response, e) -> {
+                            response.setStatus(403);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write(String.format(
+                                    "{\"status\":403,\"message\":\"Access denied\",\"path\":\"%s\",\"timestamp\":\"%s\"}",
+                                    request.getRequestURI(), LocalDateTime.now()
+                            ));
+                        })
+                );
 
         return http.build();
     }
