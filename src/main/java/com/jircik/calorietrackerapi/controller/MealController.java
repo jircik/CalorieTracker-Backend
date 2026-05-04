@@ -4,6 +4,7 @@ package com.jircik.calorietrackerapi.controller;
 import com.jircik.calorietrackerapi.domain.dto.request.AddFoodToMealRequest;
 import com.jircik.calorietrackerapi.domain.dto.request.CreateMealRequest;
 import com.jircik.calorietrackerapi.domain.dto.request.UpdateMealFoodQuantityRequest;
+import com.jircik.calorietrackerapi.domain.dto.request.UpdateMealRequest;
 import com.jircik.calorietrackerapi.domain.dto.response.MealFoodResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealSummaryResponse;
@@ -65,6 +66,17 @@ public class MealController {
             @PathVariable Long mealId,
             @AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(mealService.getMealWithFoods(mealId, principal.userId()));
+    }
+
+    @Operation(summary = "Update meal time", description = "Updates the date/time of an existing meal")
+    @PatchMapping("/{mealId}")
+    public ResponseEntity<MealResponse> updateMeal(
+            @PathVariable Long mealId,
+            @Valid @RequestBody UpdateMealRequest request,
+            @AuthenticationPrincipal UserPrincipal principal) {
+
+        return ResponseEntity.ok(
+                mealService.updateMeal(mealId, request.dateTime(), principal.userId()));
     }
 
     @Operation(summary = "Delete a meal", description = "Deletes the meal and all its associated foods (cascade delete)")

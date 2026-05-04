@@ -5,6 +5,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.jircik.calorietrackerapi.domain.dto.request.AddFoodToMealRequest;
 import com.jircik.calorietrackerapi.domain.dto.request.CreateMealRequest;
 import com.jircik.calorietrackerapi.domain.dto.request.UpdateMealFoodQuantityRequest;
+import com.jircik.calorietrackerapi.domain.dto.request.UpdateMealRequest;
+import com.jircik.calorietrackerapi.exception.DuplicateMealException;
 import com.jircik.calorietrackerapi.domain.dto.response.MealFoodResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealResponse;
 import com.jircik.calorietrackerapi.domain.dto.response.MealSummaryResponse;
@@ -103,6 +105,74 @@ public class MealControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /meals — deve retornar 409 com existingMealId em caso de duplicata")
+    void createMeal_shouldReturn409WhenDuplicate() throws Exception {
+        LocalDateTime dateTime = LocalDateTime.of(2026, 3, 10, 12, 0);
+        CreateMealRequest request = new CreateMealRequest(dateTime, MealTypeEnum.BREAKFAST);
+
+        when(mealService.createMeal(eq(1L), eq(dateTime), eq(MealTypeEnum.BREAKFAST)))
+                .thenThrow(new DuplicateMealException("A breakfast already exists for this day", 42L));
+
+        mockMvc.perform(post("/meals")
+                        .with(authentication(authAs(1L))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.existingMealId").value(42))
+                .andExpect(jsonPath("$.message").value("A breakfast already exists for this day"));
+    }
+
+    // ── updateMeal ────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("PATCH /meals/{mealId} — deve atualizar dateTime e retornar 200")
+    void updateMeal_shouldReturn200() throws Exception {
+        LocalDateTime newTime = LocalDateTime.of(2026, 3, 10, 13, 30);
+        UpdateMealRequest request = new UpdateMealRequest(newTime);
+        MealResponse response = new MealResponse(10L, 1L, newTime, MealTypeEnum.LUNCH, LocalDateTime.now());
+
+        when(mealService.updateMeal(eq(10L), eq(newTime), eq(1L))).thenReturn(response);
+
+        mockMvc.perform(patch("/meals/10")
+                        .with(authentication(authAs(1L))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.mealType").value("LUNCH"));
+    }
+
+    @Test
+    @DisplayName("PATCH /meals/{mealId} — deve retornar 400 quando dateTime é nulo")
+    void updateMeal_shouldReturn400WhenDateTimeNull() throws Exception {
+        UpdateMealRequest request = new UpdateMealRequest(null);
+
+        mockMvc.perform(patch("/meals/10")
+                        .with(authentication(authAs(1L))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("PATCH /meals/{mealId} — deve retornar 409 ao mover para dia ocupado")
+    void updateMeal_shouldReturn409WhenDuplicate() throws Exception {
+        LocalDateTime newTime = LocalDateTime.of(2026, 3, 11, 12, 0);
+        UpdateMealRequest request = new UpdateMealRequest(newTime);
+
+        when(mealService.updateMeal(eq(10L), eq(newTime), eq(1L)))
+                .thenThrow(new DuplicateMealException("A lunch already exists on the target day", 20L));
+
+        mockMvc.perform(patch("/meals/10")
+                        .with(authentication(authAs(1L))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.existingMealId").value(20));
     }
 
     // ── addFoodToMeal ─────────────────────────────────────────────────────────

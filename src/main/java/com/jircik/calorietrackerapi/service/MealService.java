@@ -11,6 +11,7 @@ import com.jircik.calorietrackerapi.domain.entity.MealTypeEnum;
 import com.jircik.calorietrackerapi.domain.entity.User;
 import com.jircik.calorietrackerapi.domain.fatsecret.NutritionProvider;
 import com.jircik.calorietrackerapi.domain.fatsecret.NutritionResult;
+import com.jircik.calorietrackerapi.exception.DuplicateMealException;
 import com.jircik.calorietrackerapi.exception.ResourceNotFoundException;
 import com.jircik.calorietrackerapi.repository.MealFoodRepository;
 import com.jircik.calorietrackerapi.repository.MealRepository;
@@ -18,7 +19,9 @@ import com.jircik.calorietrackerapi.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class MealService {
@@ -46,9 +49,16 @@ public class MealService {
     }
 
     public MealResponse createMeal(Long userId, LocalDateTime date, MealTypeEnum mealType) {
-        Meal meal = new Meal();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        findExistingMealOnDate(userId, mealType, date).ifPresent(existing -> {
+            throw new DuplicateMealException(
+                    "A " + mealType.name().toLowerCase() + " already exists for this day",
+                    existing.getId());
+        });
+
+        Meal meal = new Meal();
         meal.setUser(user);
         meal.setDatetime(date);
         meal.setMealType(mealType);
@@ -62,6 +72,40 @@ public class MealService {
                 created.getMealType(),
                 created.getCreatedAt()
         );
+    }
+
+    public MealResponse updateMeal(Long mealId, LocalDateTime newDateTime, Long callerUserId) {
+        Meal meal = mealRepository.findById(mealId)
+                .orElseThrow(() -> new ResourceNotFoundException("Meal not found"));
+        verifyMealOwnership(meal, callerUserId);
+
+        if (!meal.getDatetime().toLocalDate().equals(newDateTime.toLocalDate())) {
+            findExistingMealOnDate(callerUserId, meal.getMealType(), newDateTime)
+                    .filter(other -> !other.getId().equals(mealId))
+                    .ifPresent(other -> {
+                        throw new DuplicateMealException(
+                                "A " + meal.getMealType().name().toLowerCase()
+                                        + " already exists on the target day",
+                                other.getId());
+                    });
+        }
+
+        meal.setDatetime(newDateTime);
+        Meal saved = mealRepository.save(meal);
+
+        return new MealResponse(
+                saved.getId(),
+                saved.getUser().getId(),
+                saved.getDatetime(),
+                saved.getMealType(),
+                saved.getCreatedAt()
+        );
+    }
+
+    private Optional<Meal> findExistingMealOnDate(Long userId, MealTypeEnum mealType, LocalDateTime dateTime) {
+        LocalDateTime start = dateTime.toLocalDate().atStartOfDay();
+        LocalDateTime end = dateTime.toLocalDate().atTime(LocalTime.MAX);
+        return mealRepository.findByUser_IdAndMealTypeAndDatetimeBetween(userId, mealType, start, end);
     }
 
     public MealFoodResponse addFoodToMeal(Long mealId, AddFoodToMealRequest request, Long callerUserId) {

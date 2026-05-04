@@ -11,6 +11,7 @@ import com.jircik.calorietrackerapi.domain.entity.MealTypeEnum;
 import com.jircik.calorietrackerapi.domain.entity.User;
 import com.jircik.calorietrackerapi.domain.fatsecret.NutritionProvider;
 import com.jircik.calorietrackerapi.domain.fatsecret.NutritionResult;
+import com.jircik.calorietrackerapi.exception.DuplicateMealException;
 import com.jircik.calorietrackerapi.exception.ResourceNotFoundException;
 import com.jircik.calorietrackerapi.repository.MealFoodRepository;
 import com.jircik.calorietrackerapi.repository.MealRepository;
@@ -75,6 +76,9 @@ class MealServiceTest {
         void shouldCreateMealSuccessfully() {
             LocalDateTime dateTime = LocalDateTime.of(2026, 3, 10, 12, 0);
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(mealRepository.findByUser_IdAndMealTypeAndDatetimeBetween(
+                    eq(1L), eq(MealTypeEnum.BREAKFAST), any(), any()))
+                    .thenReturn(Optional.empty());
             when(mealRepository.save(any(Meal.class))).thenReturn(testMeal);
 
             MealResponse response = mealService.createMeal(1L, dateTime, MealTypeEnum.BREAKFAST);
@@ -93,6 +97,99 @@ class MealServiceTest {
             assertThatThrownBy(() -> mealService.createMeal(99L, LocalDateTime.now(), MealTypeEnum.BREAKFAST))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessage("User not found");
+        }
+
+        @Test
+        @DisplayName("deve lançar DuplicateMealException quando já existe refeição do mesmo tipo no dia")
+        void shouldThrowDuplicateWhenMealAlreadyExistsForDay() {
+            LocalDateTime dateTime = LocalDateTime.of(2026, 3, 10, 12, 30);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(mealRepository.findByUser_IdAndMealTypeAndDatetimeBetween(
+                    eq(1L), eq(MealTypeEnum.BREAKFAST), any(), any()))
+                    .thenReturn(Optional.of(testMeal));
+
+            assertThatThrownBy(() -> mealService.createMeal(1L, dateTime, MealTypeEnum.BREAKFAST))
+                    .isInstanceOf(DuplicateMealException.class)
+                    .satisfies(e -> assertThat(((DuplicateMealException) e).getExistingMealId()).isEqualTo(10L));
+
+            verify(mealRepository, never()).save(any(Meal.class));
+        }
+    }
+
+    // updateMeal
+    @Nested
+    @DisplayName("updateMeal")
+    class UpdateMeal {
+
+        @Test
+        @DisplayName("deve atualizar a hora da refeição com sucesso (mesmo dia)")
+        void shouldUpdateMealDateTimeSameDay() {
+            LocalDateTime newTime = LocalDateTime.of(2026, 3, 10, 13, 30);
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
+            when(mealRepository.save(any(Meal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            MealResponse response = mealService.updateMeal(10L, newTime, 1L);
+
+            assertThat(response.dateTime()).isEqualTo(newTime);
+            verify(mealRepository, never()).findByUser_IdAndMealTypeAndDatetimeBetween(any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("deve atualizar quando movendo para dia sem refeição do mesmo tipo")
+        void shouldUpdateWhenMovingToFreeDay() {
+            testMeal.setMealType(MealTypeEnum.LUNCH);
+            LocalDateTime newTime = LocalDateTime.of(2026, 3, 11, 12, 0);
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
+            when(mealRepository.findByUser_IdAndMealTypeAndDatetimeBetween(
+                    eq(1L), eq(MealTypeEnum.LUNCH), any(), any()))
+                    .thenReturn(Optional.empty());
+            when(mealRepository.save(any(Meal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            MealResponse response = mealService.updateMeal(10L, newTime, 1L);
+
+            assertThat(response.dateTime()).isEqualTo(newTime);
+        }
+
+        @Test
+        @DisplayName("deve lançar DuplicateMealException ao mover para dia que já tem refeição do mesmo tipo")
+        void shouldThrowDuplicateWhenMovingToOccupiedDay() {
+            testMeal.setMealType(MealTypeEnum.LUNCH);
+            LocalDateTime newTime = LocalDateTime.of(2026, 3, 11, 12, 0);
+
+            Meal otherMeal = new Meal();
+            otherMeal.setId(20L);
+            otherMeal.setUser(testUser);
+            otherMeal.setMealType(MealTypeEnum.LUNCH);
+            otherMeal.setDatetime(LocalDateTime.of(2026, 3, 11, 13, 0));
+
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
+            when(mealRepository.findByUser_IdAndMealTypeAndDatetimeBetween(
+                    eq(1L), eq(MealTypeEnum.LUNCH), any(), any()))
+                    .thenReturn(Optional.of(otherMeal));
+
+            assertThatThrownBy(() -> mealService.updateMeal(10L, newTime, 1L))
+                    .isInstanceOf(DuplicateMealException.class)
+                    .satisfies(e -> assertThat(((DuplicateMealException) e).getExistingMealId()).isEqualTo(20L));
+
+            verify(mealRepository, never()).save(any(Meal.class));
+        }
+
+        @Test
+        @DisplayName("deve lançar 403 quando caller não é o dono")
+        void shouldThrowForbiddenWhenNotOwner() {
+            when(mealRepository.findById(10L)).thenReturn(Optional.of(testMeal));
+
+            assertThatThrownBy(() -> mealService.updateMeal(10L, LocalDateTime.now(), 2L))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+        }
+
+        @Test
+        @DisplayName("deve lançar 404 quando refeição não existir")
+        void shouldThrowWhenMealNotFound() {
+            when(mealRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> mealService.updateMeal(99L, LocalDateTime.now(), 1L))
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 

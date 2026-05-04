@@ -1,5 +1,6 @@
 package com.jircik.calorietrackerapi.exception;
 
+import com.jircik.calorietrackerapi.domain.dto.exception.DuplicateMealErrorResponse;
 import com.jircik.calorietrackerapi.domain.dto.exception.ErrorResponse;
 import com.jircik.calorietrackerapi.domain.dto.exception.ValidationErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -86,6 +87,20 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
         return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(DuplicateMealException.class)
+    public ResponseEntity<DuplicateMealErrorResponse> handleDuplicateMeal(
+            DuplicateMealException ex,
+            HttpServletRequest request) {
+        DuplicateMealErrorResponse error = new DuplicateMealErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                ex.getExistingMealId(),
+                request.getRequestURI(),
+                LocalDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
