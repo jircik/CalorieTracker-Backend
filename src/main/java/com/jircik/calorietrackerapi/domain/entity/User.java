@@ -42,7 +42,7 @@ public class User {
 
     private Integer age;
 
-    private Double heightInMeters;
+    private Integer heightInCm;
 
     private Double currentWeight;
 

@@ -37,7 +37,7 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (request.age() != null) user.setAge(request.age());
-        if (request.heightInMeters() != null) user.setHeightInMeters(request.heightInMeters());
+        if (request.heightInCm() != null) user.setHeightInCm(request.heightInCm());
         if (request.currentWeight() != null) user.setCurrentWeight(request.currentWeight());
         if (request.weightGoal() != null) user.setWeightGoal(request.weightGoal());
         if (request.dailyCalorieIntakeGoal() != null) user.setDailyCalorieIntakeGoal(request.dailyCalorieIntakeGoal());
@@ -52,7 +52,7 @@ public class UserService {
                 user.getName(),
                 user.getEmail(),
                 user.getAge(),
-                user.getHeightInMeters(),
+                user.getHeightInCm(),
                 user.getCurrentWeight(),
                 user.getWeightGoal(),
                 user.getDailyCalorieIntakeGoal(),
@@ -72,7 +72,7 @@ public class UserService {
                 user.getName(),
                 user.getEmail(),
                 user.getAge(),
-                user.getHeightInMeters(),
+                user.getHeightInCm(),
                 user.getCurrentWeight(),
                 user.getWeightGoal(),
                 user.getDailyCalorieIntakeGoal(),
@@ -91,7 +91,7 @@ public class UserService {
                         user.getName(),
                         user.getEmail(),
                         user.getAge(),
-                        user.getHeightInMeters(),
+                        user.getHeightInCm(),
                         user.getCurrentWeight(),
                         user.getWeightGoal(),
                         user.getDailyCalorieIntakeGoal(),

@@ -18,8 +18,8 @@ public record UserResponse(
         @Schema(description = "Age in years; null if profile not configured")
         Integer age,
 
-        @Schema(description = "Height in meters; null if profile not configured")
-        Double heightInMeters,
+        @Schema(description = "Height in centimeters; null if profile not configured")
+        Integer heightInCm,
 
         @Schema(description = "Current body weight in kilograms; null if profile not configured")
         Double currentWeight,

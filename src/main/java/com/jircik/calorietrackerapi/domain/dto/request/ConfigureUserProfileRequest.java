@@ -9,8 +9,8 @@ public record ConfigureUserProfileRequest(
         @Schema(description = "Age in years", example = "25")
         Integer age,
 
-        @Schema(description = "Height in meters", example = "1.75")
-        Double heightInMeters,
+        @Schema(description = "Height in centimeters", example = "175")
+        Integer heightInCm,
 
         @Schema(description = "Current body weight in kilograms", example = "75.0")
         Double currentWeight,

@@ -87,7 +87,7 @@ Content-Type: application/json
 
 {
   "age": "(Integer)",
-  "heightInMeters": "(Double) height in meters, e.g. 1.75",
+  "heightInCm": "(Integer) height in centimeters, e.g. 175",
   "currentWeight": "(Double) kg",
   "weightGoal": "(Double) kg",
   "dailyCalorieIntakeGoal": "(Double) kcal",

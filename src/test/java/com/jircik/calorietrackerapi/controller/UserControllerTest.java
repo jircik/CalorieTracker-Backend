@@ -137,9 +137,9 @@ class UserControllerTest {
     @DisplayName("PATCH /users/{id}/profile — deve atualizar perfil e retornar 200")
     void configureUserProfile_shouldReturn200() throws Exception {
         ConfigureUserProfileRequest request = new ConfigureUserProfileRequest(
-                25, 1.75, 75.0, 70.0, 2200.0, null, null, null);
+                25, 175, 75.0, 70.0, 2200.0, null, null, null);
         UserResponse response = new UserResponse(1L, "João", "joao@email.com",
-                25, 1.75, 75.0, 70.0, 2200.0, null, null, null);
+                25, 175, 75.0, 70.0, 2200.0, null, null, null);
 
         when(userService.configureUserProfile(any(ConfigureUserProfileRequest.class), eq(1L)))
                 .thenReturn(response);
@@ -150,7 +150,7 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.age").value(25))
-                .andExpect(jsonPath("$.heightInMeters").value(1.75));
+                .andExpect(jsonPath("$.heightInCm").value(175));
     }
 
     @Test

@@ -193,14 +193,14 @@ class UserServiceTest {
         @DisplayName("deve atualizar apenas campos não nulos")
         void shouldUpdateOnlyNonNullFields() {
             ConfigureUserProfileRequest request = new ConfigureUserProfileRequest(
-                    25, 1.75, 75.0, null, null, null, GenderEnum.MALE, null);
+                    25, 175, 75.0, null, null, null, GenderEnum.MALE, null);
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             UserResponse response = userService.configureUserProfile(request, 1L);
 
             assertThat(testUser.getAge()).isEqualTo(25);
-            assertThat(testUser.getHeightInMeters()).isEqualTo(1.75);
+            assertThat(testUser.getHeightInCm()).isEqualTo(175);
             assertThat(testUser.getCurrentWeight()).isEqualTo(75.0);
             assertThat(testUser.getGender()).isEqualTo(GenderEnum.MALE);
             assertThat(testUser.getWeightGoal()).isNull();
