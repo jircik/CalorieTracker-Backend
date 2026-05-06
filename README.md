@@ -67,7 +67,7 @@ OAuth2 proxy lives as a Cloudflare Worker (`cloudflare-worker/`).
 * Indexed reads for the date-grouped meal queries on the dashboard / diary
 
 ### Quality
-* **152 automated tests**, JaCoCo coverage **~97% statement / 82% branch**
+* **152 automated tests**, JaCoCo coverage **~95% statement / 82% branch**
 * Web slice tests (`@WebMvcTest` + `MockMvc`) verify REST contracts,
   validation, and JSON shapes
 * Service tests use Mockito; integration tests against the FatSecret
@@ -292,6 +292,23 @@ The frontend has shipped (V3 is live), features that are yet to come are:
 * **Barcode scanning** 
 * **PWA install + offline read**, **Web Push** reminders
 * **Quality:** FatSecret search caching in KV, Sentry, Playwright E2E
+
+---
+
+## Attribution
+
+Food and nutrition data is provided by the FatSecret Platform API. The frontend
+renders the required attribution snippet verbatim (including the HTML comment
+markers, which are part of the unmodifiable snippet) on its public landing page
+and every authenticated screen, alongside a link to FatSecret's
+[Terms of Use](https://platform.fatsecret.com/terms), per the
+[attribution policy](https://platform.fatsecret.com/attribution):
+
+```html
+<!-- Begin fatsecret Platform API HTML Attribution Snippet -->
+<a href="https://platform.fatsecret.com">Powered by fatsecret Platform API</a>
+<!-- End fatsecret Platform API HTML Attribution Snippet -->
+```
 
 ---
 
